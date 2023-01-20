@@ -50,6 +50,19 @@ async def findByAttackID(bot, attackID : str):
 
     return data
 
+async def updateWorldMap(bot, _id, position):
+    db = bot.mongoConnect["DiscordBot"]
+    #   automatically creates genre if not present
+    collection = db["WorldMap"]
+    data = {
+        "_id": _id,
+        "position": position
+    }
+    if await collection.find_one({"_id": _id}) == None:
+
+        collection.insert_one(data)
+    else:
+        collection.replace_one({"id":_id},data)
 
 async def fetchData(bot, _id):
     """

@@ -104,6 +104,7 @@ class funActions(commands.Cog):
         attackID = randomUser["attackID"]
         sunglasses = randomUser["sunglasses"]
         binoculars = randomUser["binoculars"]
+        position = randomUser["position"]
         if myCupAmount > cupsAmount:
             oddsOfWinningNumerator = (myCupAmount/2)/cupsAmount/2
         else:
@@ -115,6 +116,7 @@ class funActions(commands.Cog):
                             f"Defense: {cardboard}\n"
                            f"Sunglasses: {sunglasses}\n"
                            f"'Nocs: {binoculars}\n"
+                           f"World Map Location: {position}\n"
                             f"Your chances of beating them in a fight: {oddsOfWinning}.\n"
                             f"Their attackID (used to attack them specifically) is {attackID}.")
 
@@ -151,6 +153,7 @@ class funActions(commands.Cog):
         attackID = randomUser["attackID"]
         sunglasses = randomUser["sunglasses"]
         binoculars = randomUser["binoculars"]
+        position = randomUser["position"]
         if myCupAmount > cupsAmount:
             oddsOfWinningNumerator = ((myCupAmount+cupsAmount)/2)-cupsAmount
         else:
@@ -162,6 +165,7 @@ class funActions(commands.Cog):
                             f"Defense: {cardboard}\n"
                            f"Sunglasses: {sunglasses}\n"
                            f"'Nocs: {binoculars}\n"
+                           f"World Map Location: {position}\n"
                             f"Your chances of beating them in a fight: {oddsOfWinning}.\n"
                             f"Their attackID (used to attack them specifically) is {attackID}.")
 
