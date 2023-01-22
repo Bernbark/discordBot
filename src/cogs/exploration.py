@@ -134,7 +134,7 @@ class ExploreWest(Button):
         if self.view.health > 0:
             description, self.view.health, newView = random_encounter(self.view.health, self.view.position, self.view)
             await interaction.response.edit_message(content="", view=newView, embed=await makeEmbed("Went West",
-                                                                                                      f"{description}{player_info(self.view.health, self.view.position)}",
+                                                                                                      f"{description}{player_info(self.view.health, newView.position)}",
                                                                                                       ""))
         else:
             self.view.clear_items()
@@ -247,7 +247,7 @@ class exploration(commands.Cog):
         userData["coins"] += view.goldEarned
         await collection.replace_one({"_id": ctx.author.id}, userData)
         await ctx.send(f"{ctx.author.name} earned {view.goldEarned} gold on their adventure.")
-        await updateWorldMap(self.bot,userData["_id"],view.position,)
+        await updateWorldMap(self.bot,userData["_id"],view.position)
 
 async def setup(bot: commands.Bot):
 

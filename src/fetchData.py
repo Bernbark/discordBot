@@ -10,15 +10,6 @@ alphabet = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k",
 alphabetUpper = ["A","B","C","D","E","F","G","H","I","J","K",
                  "L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
 
-
-async def updateAttackID(bot,_id):
-    db = bot.mongoConnect["DiscordBot"]
-    collection = db["Economy"]
-    data = await collection.find_one({"_id": _id})
-    attackID = scrambleAttackID(_id)
-    data["attackID"] = attackID
-    await collection.replace_one({"_id": _id}, data)
-
 async def scrambleAttackID(_id):
     """
     Creates a random ID using the Discord user ID combined with random letters from the alphabet and then scrambled.
@@ -36,6 +27,14 @@ async def scrambleAttackID(_id):
     result = ''.join(l)
 
     return result
+
+async def updateAttackID(bot,_id):
+    db = bot.mongoConnect["DiscordBot"]
+    collection = db["Economy"]
+    data = await collection.find_one({"_id": _id})
+    attackID = await scrambleAttackID(_id)
+    data["attackID"] = attackID
+    await collection.replace_one({"_id": _id}, data)
 
 async def findByAttackID(bot, attackID : str):
     """
@@ -62,7 +61,7 @@ async def updateWorldMap(bot, _id, position):
 
         collection.insert_one(data)
     else:
-        collection.replace_one({"id":_id},data)
+        collection.replace_one({"_id":_id},data)
 
 async def fetchData(bot, _id):
     """
@@ -92,7 +91,7 @@ async def fetchData(bot, _id):
 
         #upsert=False
 
-    #)
+   # )
 
     if await collection.find_one({"_id": _id}) == None:
         newData = {
@@ -102,8 +101,12 @@ async def fetchData(bot, _id):
             "cups": 0,
             "boxes":1,
             "cardboard":0,
+            "binoculars":0,
+            "sunglasses":0,
             "picUrl":"",
-            "attackID": attackID
+            "attackID": attackID,
+            "position": {"horizontal": 0, "vertical": 0},
+            "watchLater": []
         }
         await collection.insert_one(newData)
     return await collection.find_one({"_id": _id}), collection

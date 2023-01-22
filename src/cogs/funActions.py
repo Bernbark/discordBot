@@ -106,9 +106,9 @@ class funActions(commands.Cog):
         binoculars = randomUser["binoculars"]
         position = randomUser["position"]
         if myCupAmount > cupsAmount:
-            oddsOfWinningNumerator = (myCupAmount/2)/cupsAmount/2
+            oddsOfWinningNumerator = (myCupAmount/2)/(cupsAmount+1)/2
         else:
-            oddsOfWinningNumerator = (cupsAmount/2)/myCupAmount/2
+            oddsOfWinningNumerator = (cupsAmount/2)/(myCupAmount+1)/2
         oddsOfWinning = oddsOfWinningNumerator/(myCupAmount+1)
         channel = await member.create_dm()
         await channel.send(f"You found {user.name}'s information on the dark web. They currently hold {cupsAmount} cups.\n"
