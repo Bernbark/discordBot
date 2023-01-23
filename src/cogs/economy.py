@@ -6,6 +6,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from fetchData import fetch_data
+from botUtilities import make_embed
 
 #make cups able to buy a grade up which is defense, make that next tier able to grade up to magic, buy 10 and get 1 of
 # the next grade
@@ -43,11 +44,11 @@ class economy(commands.Cog):
         if amount > coins:
             userData["coins"] = 0
             userData["bank"] += coins
-            await ctx.send(f"You deposited {coins} coins to the bank.")
         else:
             userData["coins"] -= amount
             userData["bank"] += amount
-            await ctx.send(f"You deposited {amount} coins to the bank.")
+        embed = make_embed("Deposit success", f"You deposited {coins} coins to the bank.")
+        await ctx.send(embed=embed)
         await collection.replace_one({"_id": member.id}, userData)
 
     @commands.cooldown(1, 120, commands.BucketType.user)
@@ -62,7 +63,8 @@ class economy(commands.Cog):
         moneyReceived = random.randint(0 , 1000)
         jobDescription = random.choice(self.jobDescriptions)
         userData["coins"] += moneyReceived
-        await ctx.send(f"You earned {moneyReceived} coins by: {jobDescription}")
+        embed = make_embed("Oddjob Complete", f"You earned {moneyReceived} coins by: {jobDescription}")
+        await ctx.send(embed=embed)
         await collection.replace_one({"_id": member.id}, userData)
 
     @commands.cooldown(1, 3600, commands.BucketType.user)
@@ -79,11 +81,14 @@ class economy(commands.Cog):
             userData["coins"] -= 5000
             userData["boxes"] += 1
             currentBoxes = userData["boxes"]
-            await ctx.send(f"You've purchased one box. Total boxes = {currentBoxes}")
+            embed = make_embed("Mystery Box Purchased",f"You've purchased one box. Total boxes = {currentBoxes}")
+            await ctx.send(embed=embed)
             await collection.replace_one({"_id": member.id}, userData)
         else:
             self.buyMysteryBox.reset_cooldown(ctx)
-            await ctx.send(f"You've only got {totalGold} coins :( Need 5000 for boxes.")
+            embed = make_embed("Mystery Box Denied", f"You've only got {totalGold} coins :( Need 5000 for boxes.")
+            await ctx.send(embed=embed)
+            await ctx.send()
 
 
     @commands.command(
@@ -103,11 +108,14 @@ class economy(commands.Cog):
             userData["cups"] += 1 * amount
             cupAmount = userData["cups"]
             if amount == 1:
-                await ctx.send(f"You've purchased one cup.")
+                embed = make_embed("Bought cup")
+                await ctx.send(embed=embed)
                 channel = await ctx.author.create_dm()
+
                 await channel.send(f"You currently have {cupAmount} cups")
             else:
-                await ctx.send(f"You've purchased {amount} cups.")
+                embed = make_embed(f"You've purchased {amount} cups.")
+                await ctx.send(embed=embed)
                 channel = await ctx.author.create_dm()
                 await channel.send(f"You currently have {cupAmount} cups")
 
@@ -123,8 +131,9 @@ class economy(commands.Cog):
                             "with the coins you have.\n"
                 channel = await ctx.author.create_dm()
                 await channel.send(f"You currently have {cupAmount} cups")
-
-            await ctx.send(f"{description}You only had {totalGold} coins :( Need 500 per cup. ")
+            embed = make_embed(f"Purchased alternate amount", f"{description}"
+                                                              f"You only had {totalGold} coins :( Need 500 per cup. ")
+            await ctx.send(embed=embed)
         await collection.replace_one({"_id": member.id}, userData)
         channel = await ctx.author.create_dm()
 
@@ -145,11 +154,13 @@ class economy(commands.Cog):
             userData["cardboard"] += 1 * amount
             cardboardAmount = userData["cardboard"]
             if amount == 1:
-                await ctx.send(f"You've purchased one piece of cardboard.")
+                embed = make_embed(f"Bought cardboard.")
+                await ctx.send(embed=embed)
                 channel = await ctx.author.create_dm()
                 await channel.send(f"You currently have {cardboardAmount} cardboard")
             else:
-                await ctx.send(f"You've purchased {amount} cardboard.")
+                embed = make_embed(f"Purchase success.", f"You've purchased {amount} cardboard.")
+                await ctx.send(embed=embed)
                 channel = await ctx.author.create_dm()
                 await channel.send(f"You currently have {cardboardAmount} cardboard")
 
@@ -164,8 +175,11 @@ class economy(commands.Cog):
                               "we could with the coins you have.\n"
                 channel = await ctx.author.create_dm()
                 await channel.send(f"You currently have {cardboardAmount} cardboard")
-            await ctx.send(
-                f"{description}You only had {cups} cups :( Need 20 per cardboard piece. Purchased {amountToPurchase} instead")
+            embed = make_embed(f"Purchased alternate amount.", f"{description}You only had {cups} cups :( "
+                                                    f"Need 20 per cardboard piece. "
+                                                               f"Purchased {amountToPurchase} instead")
+            await ctx.send(embed=embed)
+
         await collection.replace_one({"_id": member.id}, userData)
 
     @commands.command(
@@ -185,11 +199,13 @@ class economy(commands.Cog):
             userData["sunglasses"] += 1 * amount
             sunglasses = userData["sunglasses"]
             if amount == 1:
-                await ctx.send(f"You've purchased one pair of sunglasses.")
+                embed = make_embed("Bought shades")
+                await ctx.send(embed=embed)
                 channel = await ctx.author.create_dm()
                 await channel.send(f"You currently have {sunglasses} sunglasses")
             else:
-                await ctx.send(f"You've purchased {amount} sunglasses.")
+                embed = make_embed("Bought shades",f"You've purchased {amount} sunglasses.")
+                await ctx.send(embed=embed)
                 channel = await ctx.author.create_dm()
                 await channel.send(f"You currently have {sunglasses} sunglasses")
 
@@ -204,8 +220,10 @@ class economy(commands.Cog):
                               "we could with the coins you have.\n"
                 channel = await ctx.author.create_dm()
                 await channel.send(f"You currently have {sunglasses} sunglasses")
-            await ctx.send(
-                f"{description}You only had {cardboard} cardboard :( Need 10 per pair of sunglasses. Purchased {amountToPurchase} instead")
+            embed = make_embed("Purchased alternate amount.",f"{description}You only had {cardboard} cardboard :( "
+                                                             f"Need 10 per pair of sunglasses. "
+                                                             f"Purchased {amountToPurchase} instead")
+            await ctx.send(embed=embed)
         await collection.replace_one({"_id": member.id}, userData)
 
     @commands.command(
@@ -225,11 +243,13 @@ class economy(commands.Cog):
             userData["binoculars"] += 1 * amount
             nocs = userData["binoculars"]
             if amount == 1:
-                await ctx.send(f"You've purchased one pair of 'nocs.")
+                embed = make_embed("Bought sweet sweet 'nocs")
+                await ctx.send(embed=embed)
                 channel = await ctx.author.create_dm()
                 await channel.send(f"You currently have {nocs} 'nocs")
             else:
-                await ctx.send(f"You've purchased {amount} 'nocs. Nice 'nocs bruh.")
+                embed =make_embed("Bought some 'nocs",f"You've purchased {amount} 'nocs. Nice 'nocs bruh.")
+                await ctx.send(embed=embed)
                 channel = await ctx.author.create_dm()
                 await channel.send(f"You currently have {nocs} 'nocs")
 
@@ -244,8 +264,11 @@ class economy(commands.Cog):
                               "we could with the coins you have.\n"
                 channel = await ctx.author.create_dm()
                 await channel.send(f"You currently have {nocs} 'nocs")
-            await ctx.send(
-                f"{description}You only had {cardboard} cardboard :( Need 10 per pair of sweet, sweet 'nocs. Purchased {amountToPurchase} instead")
+            embed=make_embed("Purchased alternate amount",f"{description}You only had {cardboard} cardboard :( "
+                                                          f"Need 10 per pair of sweet, sweet 'nocs. "
+                                                          f"Purchased {amountToPurchase} instead")
+            await ctx.send(embed=embed)
+
         await collection.replace_one({"_id": member.id}, userData)
 
     @app_commands.command(
@@ -253,7 +276,6 @@ class economy(commands.Cog):
         description= "Beg for money >:*( Also resets your coins to 0 in case of bankruptcy."
     )
     async def beg(self, interaction: discord.Interaction) -> None:
-
 
         userData, collection = await fetch_data(self.bot, interaction.user.id)
         cupAmount = userData["cups"]
@@ -264,8 +286,10 @@ class economy(commands.Cog):
             userData["coins"] = 0
             descriptionString = "You were saved from loan sharks and now have a clean slate with 0 coins.\n"
         userData["coins"] += moneyReceived
-        await interaction.response.send_message(f"{descriptionString}You've received {moneyReceived} coins! Earned a bonus of {cupBonus}"
+        embed = make_embed("Begged for money",f"{descriptionString}You've received {moneyReceived} coins! "
+                                                f"Earned a bonus of {cupBonus}"
                                                 f" from cups!")
+        await interaction.response.send_message(embed=embed)
 
         await collection.replace_one({"_id" : interaction.user.id}, userData)
 

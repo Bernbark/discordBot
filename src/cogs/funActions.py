@@ -7,6 +7,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from fetchData import find_by_attack_id, update_attack_id, fetch_meme, add_meme, remove_meme, fetch_data
+from botUtilities import make_embed
 import pymongo
 import magic
 import os
@@ -35,7 +36,8 @@ class funActions(commands.Cog):
             randomUser = doc
         user = self.bot.get_user(randomUser["_id"])
         if user == member or user is None:
-            await ctx.send(f"Your theft failed. Good!")
+            embed=make_embed(f"Your theft failed. Good!")
+            await ctx.send(embed=embed)
             return
         theftPower = random.randint(0, userData["sunglasses"])
         theftDefense = randomUser["binoculars"]
@@ -43,15 +45,19 @@ class funActions(commands.Cog):
             moneyLost = random.randint(0, 1000)
             userData["coins"] -= moneyLost
             randomUser["coins"] += moneyLost
-            await ctx.send(f"Your theft attempt failed miserably. Lost {moneyLost} coins in your scramble to get away"
+            embed = make_embed(f"Your theft attempt failed miserably. Lost {moneyLost} coins in your scramble to get away"
                            f" from {user.name}.")
+            await ctx.send(embed=embed)
         elif theftPower > theftDefense:
             cupsGained = random.randint(0, (theftPower-theftDefense))
             userData["cups"] += cupsGained
             randomUser["cups"] -= cupsGained
             if randomUser["cups"]<0:
                 randomUser["cups"] = 0
-            await ctx.send(f"Your theft was very successful. Stole {cupsGained} cups from {user.name}.")
+            embed = make_embed(
+                f"Your theft was very successful. Stole {cupsGained} cups from {user.name}.")
+            await ctx.send(embed=embed)
+            await ctx.send()
             channel = await ctx.author.create_dm()
             totalCups = userData["cups"]
             await channel.send(f"You currently have {totalCups} cups")
@@ -62,17 +68,20 @@ class funActions(commands.Cog):
                 moneyLost = random.randint(0, 1000)
                 userData["coins"] -= moneyLost
                 randomUser["coins"] += moneyLost
-                await ctx.send(
-                    f"Your theft attempt failed miserably. Lost {moneyLost} coins in your scramble to get away from"
+                embed=make_embed(f"Your theft attempt failed miserably. Lost {moneyLost} coins in your scramble to get away from"
                     f" your equal in espionage, {user.name}.")
+                await ctx.send(embed=embed)
             else:
                 cupsGained = 1
                 userData["cups"] += cupsGained
                 randomUser["cups"] -= cupsGained
                 if randomUser["cups"] < 0:
                     randomUser["cups"] = 0
-                await ctx.send(f"Your theft was minimally successful because your spy power was the same as their spy"
-                               f" resistance. Stole 1 cup from your equal in espionage, {user.name}.")
+                embed = make_embed(
+                    f"Your theft was minimally successful because your spy power was the same as their spy"
+                    f" resistance. Stole 1 cup from your equal in espionage, {user.name}.")
+                await ctx.send(embed=embed)
+
                 channel = await ctx.author.create_dm()
                 totalCups = userData["cups"]
                 await channel.send(f"You currently have {totalCups} cups")
@@ -93,7 +102,9 @@ class funActions(commands.Cog):
             randomUser = doc
         user = self.bot.get_user(randomUser["_id"])
         if user == member or user is None:
-            await ctx.send(f"Your scout failed. Good!")
+            embed = make_embed(
+                f"Your scout failed. Good!")
+            await ctx.send(embed=embed)
             return
 
         myCupAmount = userData["cups"]
@@ -131,21 +142,29 @@ class funActions(commands.Cog):
 
         userData, collection = await fetch_data(self.bot, member.id)
         if user is None:
-            await ctx.send(f"Either this person's user name has changed, or you copied it wrong!")
+            embed = make_embed(
+                f"Either this person's user name has changed, or you copied it wrong!")
+            await ctx.send(embed=embed)
+
             self.scoutByName.reset_cooldown(ctx)
             return
         else:
             randomUser, collection = await fetch_data(self.bot, user.id)
 
         if randomUser is None:
-            await ctx.send(f"Either this person's attack ID has changed, or you copied it wrong!")
+            embed = make_embed(
+                f"Either this person's attack ID has changed, or you copied it wrong!")
+            await ctx.send(embed=embed)
             self.scoutByName.reset_cooldown(ctx)
             return
 
         if user == member or user is None:
-            await ctx.send(f"Your scout failed for unusual reasons...")
+            embed = make_embed(
+                f"Your scout failed for unusual reasons...")
+            await ctx.send(embed=embed)
             self.scoutByName.reset_cooldown(ctx)
             return
+
         myCupAmount = userData["cups"]
         cupsAmount = randomUser["cups"]
         coinsHeld = randomUser["coins"]
@@ -154,10 +173,12 @@ class funActions(commands.Cog):
         sunglasses = randomUser["sunglasses"]
         binoculars = randomUser["binoculars"]
         position = randomUser["position"]
+
         if myCupAmount > cupsAmount:
             oddsOfWinningNumerator = ((myCupAmount+cupsAmount)/2)-cupsAmount
         else:
             oddsOfWinningNumerator = ((myCupAmount + cupsAmount) / 2) - myCupAmount
+
         oddsOfWinning = oddsOfWinningNumerator/(myCupAmount+1)
         channel = await member.create_dm()
         await channel.send(f"You found {user.name}'s information on the dark web. They currently hold {cupsAmount} cups.\n"
@@ -185,56 +206,60 @@ class funActions(commands.Cog):
             randomUser = doc
         user = self.bot.get_user(randomUser["_id"])
         if user == member or user is None:
-            await ctx.send(f"Your theft failed. Good!")
+            embed = make_embed(f"Your theft failed. Good!")
+            await ctx.send(embed=embed)
             return
         moneyReceived = random.randint(0, 1000)
         userData["coins"] += moneyReceived
         randomUser["coins"]-= moneyReceived
-        await ctx.send(f"You earned {moneyReceived} coins by stealing from {user.name}")
+        embed = make_embed(f"You earned {moneyReceived} coins by stealing from {user.name}")
+        await ctx.send(embed=embed)
         await collection.replace_one({"_id": member.id}, userData)
 
     @commands.cooldown(1, 120, commands.BucketType.user)
     @commands.command(
         name="attack",
-        help="Attack random people with the power of your cups.",
-
+        help="Attack random people with the power of your cups."
     )
     async def attack(self, ctx: commands.Context, *, attackID: str = "-1"):
         member = ctx.author
         fightBonus = 30
         userData, collection = await fetch_data(self.bot, member.id)
-        if(attackID == "-1"):
+        if attackID == "-1":
             async for doc in collection.aggregate([{"$sample": {"size": 1}}]):
                 randomUser = doc
         else:
             randomUser = await find_by_attack_id(self.bot, attackID)
 
         if randomUser is None:
-            await ctx.send(f"Either this person's attack ID has changed, or you copied it wrong!")
+            embed = make_embed(f"Either this person's attack ID has changed, or you copied it wrong!")
+            await ctx.send(embed=embed)
             self.attack.reset_cooldown(ctx)
             return
         user = self.bot.get_user(randomUser["_id"])
         if user == member or user is None:
-            await ctx.send(f"You attacked yourself?. How?!")
+            embed = make_embed(f"You attacked yourself?. How?!")
+            await ctx.send(embed=embed)
             return
         defense = random.randint(0, randomUser["cardboard"])
         yourAttack = random.randint(0, userData["cups"])
         theirAttack = random.randint(0, randomUser["cups"])
         if(yourAttack > theirAttack + defense):
-            await ctx.send(f"You won the fight with {yourAttack} attack against {user.name} who lamely produced "
+            embed = make_embed(f"You won the fight with {yourAttack} attack against {user.name} who lamely produced "
                            f"{theirAttack} attack power and {defense} defense.")
+            await ctx.send(embed=embed)
             coinsEarned = (yourAttack - theirAttack) * fightBonus
             userData["coins"] += coinsEarned
             randomUser["coins"] -= coinsEarned
-            await ctx.send(f"You earned {coinsEarned} coins from your opponent fair and square.")
+            embed = make_embed(f"You earned {coinsEarned} coins from your opponent fair and square.")
+            await ctx.send(embed=embed)
         else:
-            await ctx.send(f"You lost the fight with {yourAttack} attack against {user.name} who valiantly produced "
-                           f"{theirAttack} attack power and {defense} defense.")
             coinsEarned = (theirAttack - yourAttack) * fightBonus
             randomUser["coins"] += coinsEarned
             userData["coins"] -= coinsEarned
-            await ctx.send(f"You honorably hand {coinsEarned} coins to your opponent.")
-
+            embed = make_embed(f"You lost the fight with {yourAttack} attack against {user.name} who valiantly produced "
+                           f"{theirAttack} attack power and {defense} defense.",f"You honorably hand {coinsEarned} coins to your opponent.")
+            await ctx.send(embed=embed)
         await collection.replace_one({"_id": member.id}, userData)
         await collection.replace_one({"_id": user.id}, randomUser)
         await update_attack_id(self.bot, user.id)
@@ -247,37 +272,8 @@ class funActions(commands.Cog):
     async def meme(self, ctx: commands.Context, genre: str = ""):
 
         meme = await fetch_meme(self.bot, genre)
-
-        msg = await ctx.send(meme["_id"])
-
-        #await asyncio.sleep(15)
-        sticker = msg.stickers
-        embeds = msg.embeds
-        flags = msg.flags
-        interaction = msg.interaction
-        webhook_id = msg.webhook_id
-        attachments = msg.attachments
-        nonce = msg.nonce
-        components = msg.components
-        #await ctx.send(f"Embeds: {embeds}\n"
-                       #f"Webhook_id: {webhook_id}\n"
-                       #f"Flags: {flags}\n"
-                       #f"Interaction: {interaction}\n"
-                       #f"Nonce: {nonce}\n"
-                       #f"Components: {components}\n"
-                       #f"Stickers: {sticker}\n"
-                       #f"Attachments: {attachments}")
-        #notAllowedExt = [".io", ".com", ".org", ".gov",".io/"]
-        #name, extension = os.path.splitext(meme["_id"])
-        #if extension in notAllowedExt:
-        #    await ctx.send(f"This doesn't come from the expected sources, deleting from database.")
-        #    await msg.delete()
-        #    await removeMeme(self.bot, meme["_id"])
-        #    return
-        #if len(embeds) <= 0:
-        #    await ctx.send(f"This doesn't look like a meme, I'm sorry! Removed from database, try again!")
-        #    await msg.delete()
-        #    await removeMeme(self.bot, meme["_id"])
+        embed = make_embed("Your fresh meme of the day","",meme["_id"])
+        msg = await ctx.send(embed=embed)
 
 
     @commands.cooldown(2, 10, commands.BucketType.user)
@@ -290,16 +286,20 @@ class funActions(commands.Cog):
         msg = ctx.message
 
         if len(msg.embeds) == 0:
-            await ctx.send("This won't be accepted as an image/gif")
+            embed = make_embed("This won't be accepted as an image/gif")
+            await ctx.send(embed=embed)
             return
         if url is None:
-            await ctx.send("You didn't enter an image url")
+            embed = make_embed("You didn't enter an image url")
+            await ctx.send(embed=embed)
             return
         if genre == "":
-            await ctx.send("You need to choose a genre for this meme to be referenced by.")
+            embed = make_embed("You need to choose a genre for this meme to be referenced by.")
+            await ctx.send(embed=embed)
             return
         if genre not in self.acceptedGenres:
-            await ctx.send(f"You need to choose a genre from this list: {self.acceptedGenres}")
+            embed = make_embed(f"You need to choose a genre from this list: {self.acceptedGenres}")
+            await ctx.send(embed=embed)
             return
         name, extension = os.path.splitext(url)
         # List valid extensions
@@ -307,13 +307,17 @@ class funActions(commands.Cog):
         notAllowedExt = [".io", ".com", ".org", ".gov",".io/",""]
 
         if extension in notAllowedExt:
-            await ctx.send(f"You need to use a real image, preferably from an online source.")
+            embed = make_embed(f"You need to use a real image, preferably from an online source.")
+            await ctx.send(embed=embed)
             return
         try:
             await add_meme(self.bot,genre,url)
-            await ctx.send("Oh boy, a new meme added!")
+            embed = make_embed("Oh boy, a new meme added!")
+            await ctx.send(embed=embed)
         except:
-            await ctx.send("This meme has probably already been added to the Memedex")
+            embed = make_embed("This meme has probably already been added to the Memedex")
+            await ctx.send(embed=embed)
+
 
     @commands.cooldown(2, 10, commands.BucketType.user)
     @commands.command(
@@ -322,7 +326,8 @@ class funActions(commands.Cog):
     )
     async def memeTypes(self, ctx: commands.Context, genre: str = ""):
 
-        await ctx.send(f"Meme types allowed for adding: {self.acceptedGenres}")
+        embed = make_embed("Allowed types for adding:",f"{self.acceptedGenres}")
+        await ctx.send(embed=embed)
 
     @commands.cooldown(2, 10, commands.BucketType.user)
     @commands.command(
@@ -335,7 +340,8 @@ class funActions(commands.Cog):
         response = requests.get("https://api.kanye.rest/")
         data = response.json()
         quote = data["quote"]
-        await ctx.send(f"Kanye says: {quote}")
+        embed=make_embed(f"Kanye says: {quote}")
+        await ctx.send(embed=embed)
 
 
 async def setup(bot: commands.Bot):
