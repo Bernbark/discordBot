@@ -5,34 +5,30 @@
 
 import random
 
-alphabet = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k",
-            "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
-alphabetUpper = ["A","B","C","D","E","F","G","H","I","J","K",
-                 "L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
+from string import ascii_letters
 
-async def scrambleAttackID(_id):
+ENCRIPTION_LENGTH = 6
+
+def scramble_attack_id(_id: int) -> str:
     """
     Creates a random ID using the Discord user ID combined with random letters from the alphabet and then scrambled.
     :param _id: Discord user ID
     :return: a randomized ID to attack players with
     """
-    idStr = str(_id)
-    encryptionLength = 6
-    for x in range(0,encryptionLength):
-        idStr += random.choice(alphabet)
-    for x in range(0, encryptionLength):
-        idStr += random.choice(alphabet)
-    l = list(idStr)
-    random.shuffle(l)
-    result = ''.join(l)
+    chars = random.choices(
+        ascii_letters,
+        k=ENCRIPTION_LENGTH
+    )
+    chars.extend(str(_id))
+    random.shuffle(chars)
+    return ''.join(chars)
 
-    return result
 
 async def updateAttackID(bot,_id):
     db = bot.mongoConnect["DiscordBot"]
     collection = db["Economy"]
     data = await collection.find_one({"_id": _id})
-    attackID = await scrambleAttackID(_id)
+    attackID = scramble_attack_id(_id)
     data["attackID"] = attackID
     await collection.replace_one({"_id": _id}, data)
 
@@ -72,7 +68,7 @@ async def fetchData(bot, _id):
     :return: userData, collection
     """
     db = bot.mongoConnect["DiscordBot"]
-    attackID = await scrambleAttackID(_id)
+    attackID = scramble_attack_id(_id)
     collection = db["Economy"]
     # BIG NOTE: This should definitely not exist on a massive scale, it would blow up the database. It's just here
     # while I figure out which variables I want to track on my profiles. It is a hacky way to put new variables on every
