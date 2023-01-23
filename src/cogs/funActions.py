@@ -272,8 +272,7 @@ class funActions(commands.Cog):
     async def meme(self, ctx: commands.Context, genre: str = ""):
 
         meme = await fetch_meme(self.bot, genre)
-        embed = make_embed("Your fresh meme of the day","",meme["_id"])
-        msg = await ctx.send(embed=embed)
+        await ctx.send(content=meme["_id"])
 
 
     @commands.cooldown(2, 10, commands.BucketType.user)
