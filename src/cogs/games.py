@@ -5,11 +5,16 @@ import time
 import discord
 from discord.ext import commands
 from fetchData import fetch_data
-from discord.ui import Button, View, Modal
+from discord.ui import Button, View
+from botUtilities import make_embed
+
 
 class DynamiteButton(Button):
+    """
+    The subclass responsible for templating dynamite buttons and their behavior
+    """
     def __init__(self, style, label):
-        super().__init__(label=label, emoji="🧨",)
+        super().__init__(label=label, emoji="🧨")
         self.colors = { "red": discord.ButtonStyle.red,
                         "blurple": discord.ButtonStyle.blurple,
                         "green": discord.ButtonStyle.green,
@@ -29,7 +34,10 @@ class DynamiteButton(Button):
         self.style = style
 
     async def callback(self, interaction: discord.Interaction):
-
+        """
+        A necessary method for buttons in Discord.py UI, this is what the button should do when clicked, in this case
+        we want to create more dynamite when dynamite is clicked, or decide if the game is over due to clicking it.
+        """
         color = random.choice(list(self.colors.values()))
         label = random.choice(self.labels)
         dynaButton = DynamiteButton(color,label)
@@ -37,7 +45,8 @@ class DynamiteButton(Button):
             self.view.add_item(dynaButton)
         except ValueError:
             self.view.clear_items()
-            await interaction.response.edit_message(content="You lose! The board filled with too many sticks of dynamite",
+
+            await interaction.response.edit_message(embed=make_embed("You lose! The board filled with too many sticks of dynamite"),
                                                     view=self.view)
             self.view.stop()
         newList = self.view.children
@@ -47,19 +56,25 @@ class DynamiteButton(Button):
 
             for item in newList:
                 self.view.add_item(item)
-            await interaction.response.edit_message(content="Fail",
+            await interaction.response.edit_message(embed=make_embed("Fail"),
                                                     view=self.view)
         else:
             self.view.clear_items()
-            await interaction.response.edit_message(content="You lose!",
+            await interaction.response.edit_message(embed=make_embed("You lose!"),
                                                     view=self.view)
             self.view.stop()
 
-class DynamiteGame(View):
 
+class DynamiteGame(View):
+    """
+    One of the coolest parts about using the View as a class is that we can add behavior to it. Such as tracking game
+    stats like the count variable that will tell us how many times the user clicked a "correct" button in the main
+    function calling the game, dynamite().
+    """
     def __init__(self, ctx):
         super().__init__(timeout=10)
         self.ctx = ctx
+        # This can definitely be done better
         self.dynaButton1 = DynamiteButton(discord.ButtonStyle.red,"Don't click me!")
         self.dynaButton2 = DynamiteButton(discord.ButtonStyle.red,"Don't click me!")
         self.dynaButton3 = DynamiteButton(discord.ButtonStyle.red,"Don't click me!")
@@ -150,9 +165,17 @@ class DynamiteGame(View):
         explosionButton.callback = self.explosion_button_callback
         self.add_item(explosionButton)
     """
-
+    # I wanted to subclass this button as well, but decided the functionality allowed by keeping it here is what I
+    # actually want
     @discord.ui.button(label="Click me!",style=discord.ButtonStyle.blurple, emoji="😎", custom_id="goodButton")
     async def button_callback(self, interaction, button):
+        """
+        This method is for the correct button, it shuffles the entire list of buttons, removes one button from the list,
+        and then changes the color, label of every button, and the emoji of this button to confuse the player.
+        :param interaction: discord Interaction
+        :param button: Discord UI
+        :return: Nothing
+        """
         #if len(self.children) > 2:
             #explosionButton = [x for x in self.children if "explosion" in x.custom_id][0]
             #if explosionButton:
@@ -175,51 +198,38 @@ class DynamiteGame(View):
                 item.style = random.choice(list(self.colors.values()))
                 item.label = random.choice(self.labels)
                 self.add_item(item)
-            await interaction.response.edit_message(content="Good job",
+            await interaction.response.edit_message(embed=make_embed("Good job"),
                                                     view=self)
         else:
 
             self.clear_items()
-            await interaction.response.edit_message(content="You win!",
+            await interaction.response.edit_message(embed=make_embed("You win!"),
                                                     view=self)
             self.stop()
 
 
     async def on_timeout(self):
-
+        """
+        This is what happens when the game is no longer interactable, we want to clear the UI
+        :return:
+        """
         self.clear_items()
-
-
         await self.ctx.message.delete()
         self.stop()
 
-
-
-
-async def makeEmbed(title, description, url):
-
-    colorOne = random.randint(0, 255)
-    colorTwo = random.randint(0, 255)
-    colorThree = random.randint(0, 255)
-    embed = discord.Embed(
-        title=title,
-        description=description,
-        color=discord.Colour.from_rgb(colorOne, colorTwo, colorThree)
-    )
-    embed.set_image(url=url)
-    embed.add_field(name="GAME NAME UNIMPLEMENTED", value="-----------------------")
-    embed.set_footer(text="Bot written by Kory Stennett")
-
-
-    #embed.set_thumbnail(url=url)
-    return embed
 
 gameLoopTime = 20
 
 arithmetic = ['+',
               '-',
               '*']
+
+
 def new_equation_easy():
+    """
+    Creates an equation and an answer and returns it as a dict with keys "equation" and "answer". Only uses single
+    digits
+    """
     first = random.randint(1,10)
     second = random.randint(1,10)
     sign = random.choice(arithmetic)
@@ -231,6 +241,9 @@ def new_equation_easy():
         return {'equation':str(first)+sign+str(second),'answer':first*second}
 
 def new_equation_hard():
+    """
+    Creates an equation and an answer and returns it as a dict with keys "equation" and "answer". Uses triple digits
+    """
     first = random.randint(1,100)
     second = random.randint(1,100)
     sign = random.choice(arithmetic)
@@ -242,6 +255,9 @@ def new_equation_hard():
         return {'equation':str(first)+sign+str(second),'answer':first*second}
 
 class games(commands.Cog):
+    """
+    The class which organizes all games into one place
+    """
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
@@ -249,15 +265,12 @@ class games(commands.Cog):
     @commands.command(name="dynamite", help="Don't Click The Dynamite!")
     async def dynamite(self, ctx: commands.Context):
         """
-        Dynamite game using Discord's UI
+        Dynamite game using Discord's UI, click buttons until there are none left or 30 seconds runs out.
         """
         # button1 = Button(label="Click me!",style=discord.ButtonStyle.blurple, emoji="😎")
         # button2 = Button(label="Don't click me!", style=discord.ButtonStyle.red, emoji="🧨")
         # button3 = Button()
         view = DynamiteGame(ctx)
-
-
-
         msg = await ctx.send("Hi!", view=view, delete_after=30)
         await asyncio.sleep(30)
         count = view.count
@@ -299,10 +312,10 @@ class games(commands.Cog):
     @commands.cooldown(1, 20, commands.BucketType.user)
     @commands.command(name="math", help="Play the Math Wizard Game.")
     async def mathwiz(self, ctx: commands.Context, *,bet: int = 1):
-
         """
-                Type <prefix>math BET_AMOUNT You can play by betting a certain amount or just typing <prefix>m spends 10 gold to play
-                """
+        Math wizard game is an attempt at a live game, creating equations for the player to solve as quickly as they can
+        They're given 20 seconds to answer as many as possible.
+        """
         winnings = int(bet) * 2
         member = ctx.author
         gameLoopTime = 20
@@ -319,13 +332,15 @@ class games(commands.Cog):
                 data = new_equation_easy()
             equation = data['equation']
             answer = data['answer']
-            embed = await makeEmbed(f"EQUATION: {equation}", f"Here we go!", "")
+            embed = await make_embed(f"EQUATION: {equation}", f"Here we go!", "")
             msg = await ctx.send(embed=embed)
 
             counter = 0
             correct = 0
             while counter <= gameLoopTime:
                 try:
+                    # the check here is saying when we receive the next message, only do this if it's from the original
+                    # author
                     choice = await self.bot.wait_for('message', timeout=3.8,
                                                      check=lambda message: message.author == ctx.author)
                     if str(choice.content) == "quit" or str(choice.content) == "exit" or str(choice.content) == "stop":
@@ -333,7 +348,7 @@ class games(commands.Cog):
                         correct = 0
                         counter = 999
 
-                        embed = await makeEmbed(f"You quit!",
+                        embed = await make_embed(f"You quit!",
                                                 f"Quitter! :)",
                                                 "")
                         await msg.edit(embed=embed)
@@ -352,10 +367,10 @@ class games(commands.Cog):
 
                         time_left = gameLoopTime - counter
                         if time_left > 0:
-                            embed= await makeEmbed(f"EQUATION: {equation}",f"TIME LEFT: {time_left} seconds.","")
+                            embed= await make_embed(f"EQUATION: {equation}",f"TIME LEFT: {time_left} seconds.","")
                             await msg.edit(embed=embed)
                         else:
-                            embed = await makeEmbed(f"EQUATION: {equation}",f"TIME ALMOST UP : {time_left} seconds.","")
+                            embed = await make_embed(f"EQUATION: {equation}",f"TIME ALMOST UP : {time_left} seconds.","")
                             await msg.edit(embed=embed)
 
 
@@ -369,14 +384,14 @@ class games(commands.Cog):
                         answer = data['answer']
                         counter += 2
                         time_left = gameLoopTime - counter
-                        embed = await makeEmbed(f"EQUATION: {equation}", f"Sorry, wrong, 2 second penalty, time left: {time_left} seconds",
+                        embed = await make_embed(f"EQUATION: {equation}", f"Sorry, wrong, 2 second penalty, time left: {time_left} seconds",
                                           "")
                         await msg.edit(embed=embed)
 
                 except asyncio.TimeoutError:
                     counter += 3
                     time_left = gameLoopTime - counter
-                    embed = await makeEmbed(f"EQUATION: {equation}",
+                    embed = await make_embed(f"EQUATION: {equation}",
                                       f"3 second penalty for no answer in time. Time left {time_left} seconds.",
                                       "")
                     await msg.edit(embed=embed)
@@ -397,10 +412,9 @@ class games(commands.Cog):
 
     @commands.command(name="stealmath", help="Play the Math Wizard Game with your friends >:) ")
     async def stealmath(self, ctx: commands.Context, *, bet: int = 1):
-
         """
-                Type <prefix>math BET_AMOUNT You can play by betting a certain amount or just typing <prefix>m spends 10 gold to play
-                """
+        Math wizard game except there is no checking for the correct author, meaning others can intervene (WIP)
+        """
         winnings = int(bet) * 2
         member = ctx.author
         gameLoopTime = 30
@@ -417,7 +431,7 @@ class games(commands.Cog):
                 data = new_equation_easy()
             equation = data['equation']
             answer = data['answer']
-            embed = await makeEmbed(f"EQUATION: {equation}", f"Here we go!", "")
+            embed = await make_embed(f"EQUATION: {equation}", f"Here we go!", "")
             msg = await ctx.send(embed=embed)
 
             counter = 0
@@ -431,7 +445,7 @@ class games(commands.Cog):
                         correct = 0
                         counter = 999
 
-                        embed = await makeEmbed(f"You quit!",
+                        embed = await make_embed(f"You quit!",
                                                 f"Quitter! :)",
                                                 "")
                         await msg.edit(embed=embed)
@@ -449,10 +463,10 @@ class games(commands.Cog):
 
                         time_left = gameLoopTime - counter
                         if time_left > 0:
-                            embed = await makeEmbed(f"EQUATION: {equation}", f"TIME LEFT: {time_left} seconds.", "")
+                            embed = await make_embed(f"EQUATION: {equation}", f"TIME LEFT: {time_left} seconds.", "")
                             await msg.edit(embed=embed)
                         else:
-                            embed = await makeEmbed(f"EQUATION: {equation}", f"TIME ALMOST UP : {time_left} seconds.",
+                            embed = await make_embed(f"EQUATION: {equation}", f"TIME ALMOST UP : {time_left} seconds.",
                                                     "")
                             await msg.edit(embed=embed)
 
@@ -467,7 +481,7 @@ class games(commands.Cog):
                         answer = data['answer']
                         counter += 2
                         time_left = gameLoopTime - counter
-                        embed = await makeEmbed(f"EQUATION: {equation}",
+                        embed = await make_embed(f"EQUATION: {equation}",
                                                 f"Sorry, wrong, 2 second penalty, time left: {time_left} seconds",
                                                 "")
                         await msg.edit(embed=embed)
@@ -475,7 +489,7 @@ class games(commands.Cog):
                 except asyncio.TimeoutError:
                     counter += 3
                     time_left = gameLoopTime - counter
-                    embed = await makeEmbed(f"EQUATION: {equation}",
+                    embed = await make_embed(f"EQUATION: {equation}",
                                             f"3 second penalty for no answer in time. Time left {time_left} seconds.",
                                             "")
                     await msg.edit(embed=embed)
@@ -493,13 +507,6 @@ class games(commands.Cog):
                 await ctx.send(f"Sorry, you lose {bet} gold. You couldn't get any answers right. Try again!")
                 userData["coins"] -= bet
             await collection.replace_one({"_id": member.id}, userData)
-
-    """
-    Let's make a whack-a-mole style game, avoid the dynamite, and the more dynamite they avoid, the better score
-    """
-
-
-
 
 
 async def setup(bot: commands.Bot):

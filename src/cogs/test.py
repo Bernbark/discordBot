@@ -8,25 +8,8 @@ from discord import app_commands
 from discord.ext import commands, tasks
 from discord.ext.commands import bot
 from fetchData import fetch_data, remove_account
+from botUtilities import make_embed
 
-
-async def makeEmbed(title, description, url):
-
-    colorOne = random.randint(0, 255)
-    colorTwo = random.randint(0, 255)
-    colorThree = random.randint(0, 255)
-    embed = discord.Embed(
-        title=title,
-        description=description,
-        color=discord.Colour.from_rgb(colorOne, colorTwo, colorThree)
-    )
-    embed.set_image(url=url)
-    embed.add_field(name="GAME NAME UNIMPLEMENTED", value="-----------------------")
-    embed.set_footer(text="Bot written by Kory Stennett")
-
-
-    #embed.set_thumbnail(url=url)
-    return embed
 
 class test(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -40,7 +23,7 @@ class test(commands.Cog):
         userData, collection = await fetch_data(self.bot, ctx.author.id)
         userData["picUrl"] = url
 
-        await ctx.send("Your picture has been changed.")
+        await ctx.send(make_embed("Your picture has been changed."))
         await collection.replace_one({"_id": ctx.author.id}, userData)
 
     @commands.command(name="resetplease", help="Reset your own profile to default. THERE IS NO WARNING, IT WILL JUST"
@@ -51,7 +34,7 @@ class test(commands.Cog):
         myPic = userData["picUrl"]
         coins = userData["coins"]
 
-        ownProfileEmbed = await makeEmbed(
+        ownProfileEmbed = await make_embed(
             str(ctx.message.author.name) + "'s profile'",
             f"**Username:** {ctx.message.author}\n**User ID:** {ctx.message.author.id}"
                 f"\nCurrent coins: {coins}",myPic)
@@ -70,7 +53,7 @@ class test(commands.Cog):
             otherUser = self.bot.get_user(other["_id"])
             otherCoins = other["coins"]
             otherImage = other["picUrl"]
-            otherProfileEmbed = await makeEmbed(
+            otherProfileEmbed = await make_embed(
                 str(otherUser.name) + "'s profile",
                 f"**Username:** {otherUser.name}\n**User ID:** {otherUser.id}"
                             f"\nCurrent coins: {otherCoins}", otherImage
@@ -85,7 +68,7 @@ class test(commands.Cog):
         totalSunglasses = userData["sunglasses"]
         totalBinoculars = userData["binoculars"]
         myPic = userData["picUrl"]
-        ownProfileEmbed = await makeEmbed(
+        ownProfileEmbed = await make_embed(
                 str(ctx.author.name) + "'s profile",
                 f"**Username:** {ctx.author.name}\n**User ID:** {ctx.author.id}"
                             f"\nCurrent coins: {coins}", myPic
@@ -114,7 +97,7 @@ class test(commands.Cog):
                         name: str,
                         age: int) -> None:
         await interaction.response.send_message(
-            f"My name is {name} and my age is {age}"
+            embed=make_embed(f"My name is {name} and my age is {age}")
         )
 
 async def setup(bot: commands.Bot):

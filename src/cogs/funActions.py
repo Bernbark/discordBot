@@ -245,13 +245,11 @@ class funActions(commands.Cog):
         yourAttack = random.randint(0, userData["cups"])
         theirAttack = random.randint(0, randomUser["cups"])
         if(yourAttack > theirAttack + defense):
-            embed = make_embed(f"You won the fight with {yourAttack} attack against {user.name} who lamely produced "
-                           f"{theirAttack} attack power and {defense} defense.")
-            await ctx.send(embed=embed)
             coinsEarned = (yourAttack - theirAttack) * fightBonus
             userData["coins"] += coinsEarned
             randomUser["coins"] -= coinsEarned
-            embed = make_embed(f"You earned {coinsEarned} coins from your opponent fair and square.")
+            embed = make_embed(f"You won the fight with {yourAttack} attack against {user.name} who lamely produced "
+                           f"{theirAttack} attack power and {defense} defense.",f"You earned {coinsEarned} coins from your opponent fair and square.")
             await ctx.send(embed=embed)
         else:
             coinsEarned = (theirAttack - yourAttack) * fightBonus
