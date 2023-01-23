@@ -4,7 +4,7 @@ import random
 import time
 import discord
 from discord.ext import commands
-from fetchData import fetchData, removeAccount
+from fetchData import fetch_data
 from discord.ui import Button, View, Modal
 
 class DynamiteButton(Button):
@@ -306,7 +306,7 @@ class games(commands.Cog):
         winnings = int(bet) * 2
         member = ctx.author
         gameLoopTime = 20
-        userData, collection = await fetchData(self.bot, member.id)
+        userData, collection = await fetch_data(self.bot, member.id)
         if userData["coins"] < 10 or int(bet) > userData["coins"]:
             await ctx.send("You don't have the coin to play this game, go earn more!.")
             return
@@ -404,7 +404,7 @@ class games(commands.Cog):
         winnings = int(bet) * 2
         member = ctx.author
         gameLoopTime = 30
-        userData, collection = await fetchData(self.bot, member.id)
+        userData, collection = await fetch_data(self.bot, member.id)
         if userData["coins"] < 10 or int(bet) > userData["coins"]:
             await ctx.send("You don't have the coin to play this game, go earn more!.")
             return

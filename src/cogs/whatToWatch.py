@@ -6,7 +6,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 from discord.ext.commands import bot
-from fetchData import fetchData, removeAccount
+from fetchData import fetch_data
 
 
 async def makeEmbed(title, description, url):
@@ -41,7 +41,7 @@ class whatToWatch(commands.Cog):
             await ctx.send("Type or paste a URL/show name after the command to save it.")
             return
         member = ctx.author
-        userData, collection = await fetchData(self.bot, member.id)
+        userData, collection = await fetch_data(self.bot, member.id)
         userData["watchLater"].append(url)
         await ctx.send("Collection updated, new show acquired for viewing later.")
         await collection.replace_one({"_id": member.id}, userData)
@@ -53,7 +53,7 @@ class whatToWatch(commands.Cog):
     async def printWatchLater(self, ctx: commands.Context):
 
         member = ctx.author
-        userData, collection = await fetchData(self.bot, member.id)
+        userData, collection = await fetch_data(self.bot, member.id)
         watchList = userData["watchLater"]
         await ctx.send(f"Collection: {watchList}")
         await collection.replace_one({"_id": member.id}, userData)

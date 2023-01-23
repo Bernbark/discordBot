@@ -4,7 +4,7 @@ import random
 import time
 import discord
 from discord.ext import commands
-from fetchData import fetchData, removeAccount, updateWorldMap
+from fetchData import fetch_data, update_world_map
 from discord.ui import Button, View, Modal
 
 async def makeEmbed(title, description, url):
@@ -236,7 +236,7 @@ class exploration(commands.Cog):
         # button2 = Button(label="Don't click me!", style=discord.ButtonStyle.red, emoji="🧨")
         # button3 = Button()
 
-        userData, collection = await fetchData(self.bot, ctx.author.id)
+        userData, collection = await fetch_data(self.bot, ctx.author.id)
         health = userData["cups"]
 
         position = userData["position"]
@@ -247,7 +247,7 @@ class exploration(commands.Cog):
         userData["coins"] += view.goldEarned
         await collection.replace_one({"_id": ctx.author.id}, userData)
         await ctx.send(f"{ctx.author.name} earned {view.goldEarned} gold on their adventure.")
-        await updateWorldMap(self.bot,userData["_id"],view.position)
+        await update_world_map(self.bot,userData["_id"],view.position)
 
 async def setup(bot: commands.Bot):
 

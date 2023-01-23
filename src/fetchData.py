@@ -7,7 +7,8 @@ import random
 
 from string import ascii_letters
 
-ENCRIPTION_LENGTH = 6
+ENCRYPTION_LENGTH = 6
+
 
 def scramble_attack_id(_id: int) -> str:
     """
@@ -17,35 +18,54 @@ def scramble_attack_id(_id: int) -> str:
     """
     chars = random.choices(
         ascii_letters,
-        k=ENCRIPTION_LENGTH
+        k=ENCRYPTION_LENGTH
     )
     chars.extend(str(_id))
     random.shuffle(chars)
     return ''.join(chars)
 
 
-async def updateAttackID(bot,_id):
+async def update_attack_id(bot, _id):
+    """
+    Update the player's attack ID whenever they take certain actions. This is meant
+    to be called throughout the project.
+    :param bot: the Discord bot
+    :param _id: Discord user ID to change
+    :return: Nothing
+    """
     db = bot.mongoConnect["DiscordBot"]
     collection = db["Economy"]
     data = await collection.find_one({"_id": _id})
-    attackID = scramble_attack_id(_id)
-    data["attackID"] = attackID
+    attack_id = scramble_attack_id(_id)
+    data["attackID"] = attack_id
     await collection.replace_one({"_id": _id}, data)
 
-async def findByAttackID(bot, attackID : str):
+
+async def find_by_attack_id(bot, attack_id: str):
     """
     Finds a player to attack by targeting their attack ID
     :param bot: the Discord bot from main.py
-    :param attackID: string
+    :param attack_id: string
     :return: player data document from MongoDB
     """
     db = bot.mongoConnect["DiscordBot"]
     collection = db["Economy"]
-    data = await collection.find_one({"attackID": attackID})
-
+    data = await collection.find_one({"attackID": attack_id})
     return data
 
-async def updateWorldMap(bot, _id, position):
+
+async def update_world_map(bot, _id, position):
+    """
+    Updates the database of the player's coordinates on the world map
+    which is relevant during exploration.
+    :param bot: Discord bot
+    :param _id: Discord user ID
+    :param position: a dict, looking like this:
+        position = {
+            "horizontal": int, "vertical": int
+        }
+    :return: Nothing
+    """
     db = bot.mongoConnect["DiscordBot"]
     #   automatically creates genre if not present
     collection = db["WorldMap"]
@@ -53,13 +73,13 @@ async def updateWorldMap(bot, _id, position):
         "_id": _id,
         "position": position
     }
-    if await collection.find_one({"_id": _id}) == None:
-
+    if await collection.find_one({"_id": _id}) is None:
         collection.insert_one(data)
     else:
-        collection.replace_one({"_id":_id},data)
+        collection.replace_one({"_id": _id}, data)
 
-async def fetchData(bot, _id):
+
+async def fetch_data(bot, _id):
     """
     The main way to get information about a user, and gather the entire user profile collection
         If a user doesn't get found by ID, they're created automatically.
@@ -68,7 +88,7 @@ async def fetchData(bot, _id):
     :return: userData, collection
     """
     db = bot.mongoConnect["DiscordBot"]
-    attackID = scramble_attack_id(_id)
+    attack_id = scramble_attack_id(_id)
     collection = db["Economy"]
     # BIG NOTE: This should definitely not exist on a massive scale, it would blow up the database. It's just here
     # while I figure out which variables I want to track on my profiles. It is a hacky way to put new variables on every
@@ -80,35 +100,34 @@ async def fetchData(bot, _id):
         The second parameter is what we're actually doing with the documents, which is set a new variable to something
         The final parameter is necessary for update_many and doesn't really influence our situation 
     """
+    # await collection.update_many(
+    #   {},
+    #   {"$set": {"position": {"horizontal": 0, "vertical": 0}}},
 
-    #await collection.update_many(
-        #{},
-        #{"$set": {"position": {"horizontal": 0, "vertical": 0}}},
+    #   upsert=False
 
-        #upsert=False
+    # )
 
-   # )
-
-    if await collection.find_one({"_id": _id}) == None:
-        newData = {
+    if await collection.find_one({"_id": _id}) is None:
+        new_data = {
             "_id": _id,
             "coins": 0,
-            "bank":0,
+            "bank": 0,
             "cups": 0,
-            "boxes":1,
-            "cardboard":0,
-            "binoculars":0,
-            "sunglasses":0,
-            "picUrl":"",
-            "attackID": attackID,
+            "boxes": 1,
+            "cardboard": 0,
+            "binoculars": 0,
+            "sunglasses": 0,
+            "picUrl": "",
+            "attackID": attack_id,
             "position": {"horizontal": 0, "vertical": 0},
             "watchLater": []
         }
-        await collection.insert_one(newData)
+        await collection.insert_one(new_data)
     return await collection.find_one({"_id": _id}), collection
 
 
-async def removeAccount(bot, _id):
+async def remove_account(bot, _id):
     """
     A quick and dirty way to remove account and allow users to reset their profiles.
         It deletes the document if it exists, but the user can only delete their own account.
@@ -122,7 +141,7 @@ async def removeAccount(bot, _id):
     collection.delete_one(query)
 
 
-async def removeMeme(bot, url):
+async def remove_meme(bot, url):
     """
     Removes memes from the reactions collection on MongoDB
     :param bot: discord bot
@@ -135,7 +154,8 @@ async def removeMeme(bot, url):
     query = {"_id": url}
     collection.delete_one(query)
 
-async def addMeme(bot, genre, url):
+
+async def add_meme(bot, genre, url):
     """
     Add meme to the database (it is checked for authenticity beforehand)
         It follows the data scheme of { "_id": url, "genre": genre }
@@ -156,7 +176,7 @@ async def addMeme(bot, genre, url):
     await collection.insert_one(data)
 
 
-async def fetchMeme(bot, genre):
+async def fetch_meme(bot, genre):
     """
     Grab a random meme from the database based on genre (like confused, happy, sad)
     :param bot: discord bot
@@ -172,7 +192,7 @@ async def fetchMeme(bot, genre):
     meme = "No meme found"
     async for doc in collection.aggregate([
         {"$match": {"genre": genre}},
-         {"$sample": {"size": 1}}
+        {"$sample": {"size": 1}}
     ]):
         meme = doc
     return meme

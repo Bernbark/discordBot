@@ -5,7 +5,7 @@ import random
 import discord
 from discord import app_commands
 from discord.ext import commands
-from fetchData import fetchData
+from fetchData import fetch_data
 
 #make cups able to buy a grade up which is defense, make that next tier able to grade up to magic, buy 10 and get 1 of
 # the next grade
@@ -38,7 +38,7 @@ class economy(commands.Cog):
             await ctx.send("Please choose a positive, non-zero number for the amount of coins to deposit")
             return
         member = ctx.author
-        userData, collection = await fetchData(self.bot, member.id)
+        userData, collection = await fetch_data(self.bot, member.id)
         coins = userData["coins"]
         if amount > coins:
             userData["coins"] = 0
@@ -58,7 +58,7 @@ class economy(commands.Cog):
     async def oddJob(self, ctx: commands.Context):
 
         member = ctx.author
-        userData, collection = await fetchData(self.bot, member.id)
+        userData, collection = await fetch_data(self.bot, member.id)
         moneyReceived = random.randint(0 , 1000)
         jobDescription = random.choice(self.jobDescriptions)
         userData["coins"] += moneyReceived
@@ -73,7 +73,7 @@ class economy(commands.Cog):
     )
     async def buyMysteryBox(self, ctx: commands.Context):
         member = ctx.author
-        userData, collection = await fetchData(self.bot, member.id)
+        userData, collection = await fetch_data(self.bot, member.id)
         totalGold = userData["coins"]
         if userData["coins"] >= 5000:
             userData["coins"] -= 5000
@@ -96,7 +96,7 @@ class economy(commands.Cog):
             await ctx.send("Please use a positive, non-zero number for the amount to buy.")
             return
         member = ctx.author
-        userData, collection = await fetchData(self.bot, member.id)
+        userData, collection = await fetch_data(self.bot, member.id)
         totalGold = userData["coins"]
         if userData["coins"] >= (500 * amount):
             userData["coins"] -= 500 * amount
@@ -138,7 +138,7 @@ class economy(commands.Cog):
             await ctx.send("Please use a positive, non-zero number for the amount to buy.")
             return
         member = ctx.author
-        userData, collection = await fetchData(self.bot, member.id)
+        userData, collection = await fetch_data(self.bot, member.id)
         cups = userData["cups"]
         if userData["cups"] >= (20 * amount):
             userData["cups"] -= 20 * amount
@@ -178,7 +178,7 @@ class economy(commands.Cog):
             await ctx.send("Please use a positive, non-zero number for the amount to buy.")
             return
         member = ctx.author
-        userData, collection = await fetchData(self.bot, member.id)
+        userData, collection = await fetch_data(self.bot, member.id)
         cardboard = userData["cardboard"]
         if userData["cardboard"] >= (10 * amount):
             userData["cardboard"] -= 10 * amount
@@ -218,7 +218,7 @@ class economy(commands.Cog):
             await ctx.send("Please use a positive, non-zero number for the amount to buy.")
             return
         member = ctx.author
-        userData, collection = await fetchData(self.bot, member.id)
+        userData, collection = await fetch_data(self.bot, member.id)
         cardboard = userData["cardboard"]
         if userData["cardboard"] >= (10 * amount):
             userData["cardboard"] -= 10 * amount
@@ -255,7 +255,7 @@ class economy(commands.Cog):
     async def beg(self, interaction: discord.Interaction) -> None:
 
 
-        userData, collection = await fetchData(self.bot, interaction.user.id)
+        userData, collection = await fetch_data(self.bot, interaction.user.id)
         cupAmount = userData["cups"]
         cupBonus = cupAmount * 10
         moneyReceived = random.randint(0+cupBonus, 100+cupBonus)

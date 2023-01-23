@@ -7,7 +7,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 from discord.ext.commands import bot
-from fetchData import fetchData, removeAccount
+from fetchData import fetch_data, remove_account
 
 
 async def makeEmbed(title, description, url):
@@ -37,7 +37,7 @@ class test(commands.Cog):
                                            "paste that after !picture")
     async def changePicture(self, ctx: commands.Context, url : str = ""):
 
-        userData, collection = await fetchData(self.bot, ctx.author.id)
+        userData, collection = await fetch_data(self.bot, ctx.author.id)
         userData["picUrl"] = url
 
         await ctx.send("Your picture has been changed.")
@@ -46,8 +46,8 @@ class test(commands.Cog):
     @commands.command(name="resetplease", help="Reset your own profile to default. THERE IS NO WARNING, IT WILL JUST"
                                                " HAPPEN FOR NOW, BEWARE")
     async def resetAccount(self, ctx: commands.Context):
-        await removeAccount(self.bot,ctx.author.id)
-        userData, collection = await fetchData(self.bot, ctx.author.id)
+        await remove_account(self.bot,ctx.author.id)
+        userData, collection = await fetch_data(self.bot, ctx.author.id)
         myPic = userData["picUrl"]
         coins = userData["coins"]
 
@@ -64,9 +64,9 @@ class test(commands.Cog):
     @commands.command(name="profile", help="View someone's profile")
     async def profile(self,ctx: commands.Context, user: discord.User = None):
 
-        userData, collection = await fetchData(self.bot,ctx.author.id)
+        userData, collection = await fetch_data(self.bot,ctx.author.id)
         if user is not None:
-            other, collection = await fetchData(self.bot, user.id)
+            other, collection = await fetch_data(self.bot, user.id)
             otherUser = self.bot.get_user(other["_id"])
             otherCoins = other["coins"]
             otherImage = other["picUrl"]

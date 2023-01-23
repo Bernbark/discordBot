@@ -6,7 +6,7 @@ import aiohttp
 import discord
 from discord import app_commands
 from discord.ext import commands
-from fetchData import fetchData, findByAttackID, updateAttackID, fetchMeme, addMeme, removeMeme
+from fetchData import find_by_attack_id, update_attack_id, fetch_meme, add_meme, remove_meme, fetch_data
 import pymongo
 import magic
 import os
@@ -30,7 +30,7 @@ class funActions(commands.Cog):
     async def stealItem(self, ctx: commands.Context):
         member = ctx.author
 
-        userData, collection = await fetchData(self.bot, member.id)
+        userData, collection = await fetch_data(self.bot, member.id)
         async for doc in collection.aggregate([{"$sample": {"size": 1}}]):
             randomUser = doc
         user = self.bot.get_user(randomUser["_id"])
@@ -88,7 +88,7 @@ class funActions(commands.Cog):
     async def scout(self, ctx: commands.Context):
         member = ctx.author
 
-        userData, collection = await fetchData(self.bot, member.id)
+        userData, collection = await fetch_data(self.bot, member.id)
         async for doc in collection.aggregate([{"$sample": {"size": 1}}]):
             randomUser = doc
         user = self.bot.get_user(randomUser["_id"])
@@ -129,13 +129,13 @@ class funActions(commands.Cog):
     async def scoutByName(self, ctx: commands.Context, user: discord.Member = None):
         member = ctx.author
 
-        userData, collection = await fetchData(self.bot, member.id)
+        userData, collection = await fetch_data(self.bot, member.id)
         if user is None:
             await ctx.send(f"Either this person's user name has changed, or you copied it wrong!")
             self.scoutByName.reset_cooldown(ctx)
             return
         else:
-            randomUser, collection = await fetchData(self.bot, user.id)
+            randomUser, collection = await fetch_data(self.bot, user.id)
 
         if randomUser is None:
             await ctx.send(f"Either this person's attack ID has changed, or you copied it wrong!")
@@ -179,7 +179,7 @@ class funActions(commands.Cog):
     async def steal(self, ctx: commands.Context):
         member = ctx.author
 
-        userData, collection = await fetchData(self.bot, member.id)
+        userData, collection = await fetch_data(self.bot, member.id)
         async for doc in collection.aggregate([{ "$sample": { "size": 1 } }]):
 
             randomUser = doc
@@ -202,12 +202,12 @@ class funActions(commands.Cog):
     async def attack(self, ctx: commands.Context, *, attackID: str = "-1"):
         member = ctx.author
         fightBonus = 30
-        userData, collection = await fetchData(self.bot, member.id)
+        userData, collection = await fetch_data(self.bot, member.id)
         if(attackID == "-1"):
             async for doc in collection.aggregate([{"$sample": {"size": 1}}]):
                 randomUser = doc
         else:
-            randomUser = await findByAttackID(self.bot, attackID)
+            randomUser = await find_by_attack_id(self.bot, attackID)
 
         if randomUser is None:
             await ctx.send(f"Either this person's attack ID has changed, or you copied it wrong!")
@@ -237,7 +237,7 @@ class funActions(commands.Cog):
 
         await collection.replace_one({"_id": member.id}, userData)
         await collection.replace_one({"_id": user.id}, randomUser)
-        await updateAttackID(self.bot, user.id)
+        await update_attack_id(self.bot, user.id)
 
     @commands.cooldown(4, 10, commands.BucketType.user)
     @commands.command(
@@ -246,7 +246,7 @@ class funActions(commands.Cog):
     )
     async def meme(self, ctx: commands.Context, genre: str = ""):
 
-        meme = await fetchMeme(self.bot, genre)
+        meme = await fetch_meme(self.bot, genre)
 
         msg = await ctx.send(meme["_id"])
 
@@ -310,7 +310,7 @@ class funActions(commands.Cog):
             await ctx.send(f"You need to use a real image, preferably from an online source.")
             return
         try:
-            await addMeme(self.bot,genre,url)
+            await add_meme(self.bot,genre,url)
             await ctx.send("Oh boy, a new meme added!")
         except:
             await ctx.send("This meme has probably already been added to the Memedex")
