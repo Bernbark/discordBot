@@ -2,7 +2,6 @@
 import asyncio
 import os
 import random
-
 import aiohttp
 import discord
 import motor.motor_asyncio
@@ -10,7 +9,9 @@ import motor.motor_asyncio
 from discord.ext import commands
 from discord.ext.commands import bot
 from dotenv import load_dotenv
-
+from sys import path
+from os.path import dirname as dir
+path.append(dir(path[0]))
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -33,10 +34,9 @@ class MyBot(commands.Bot):
             "cogs.games",
             "cogs.whatToWatch",
             "cogs.artsy",
-            "cogs.exploration"
+            "cogs.exploration",
+            "cogs.shop"
         ]
-
-
 
     # Loading cogs
     async def setup_hook(self):

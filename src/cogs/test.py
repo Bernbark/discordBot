@@ -34,7 +34,7 @@ class test(commands.Cog):
         myPic = userData["picUrl"]
         coins = userData["coins"]
 
-        ownProfileEmbed = await make_embed(
+        ownProfileEmbed = make_embed(
             str(ctx.message.author.name) + "'s profile'",
             f"**Username:** {ctx.message.author}\n**User ID:** {ctx.message.author.id}"
                 f"\nCurrent coins: {coins}",myPic)
@@ -53,7 +53,7 @@ class test(commands.Cog):
             otherUser = self.bot.get_user(other["_id"])
             otherCoins = other["coins"]
             otherImage = other["picUrl"]
-            otherProfileEmbed = await make_embed(
+            otherProfileEmbed = make_embed(
                 str(otherUser.name) + "'s profile",
                 f"**Username:** {otherUser.name}\n**User ID:** {otherUser.id}"
                             f"\nCurrent coins: {otherCoins}", otherImage
@@ -68,7 +68,7 @@ class test(commands.Cog):
         totalSunglasses = userData["sunglasses"]
         totalBinoculars = userData["binoculars"]
         myPic = userData["picUrl"]
-        ownProfileEmbed = await make_embed(
+        ownProfileEmbed = make_embed(
                 str(ctx.author.name) + "'s profile",
                 f"**Username:** {ctx.author.name}\n**User ID:** {ctx.author.id}"
                             f"\nCurrent coins: {coins}", myPic

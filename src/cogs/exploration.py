@@ -5,7 +5,7 @@ import time
 import discord
 from discord.ext import commands
 from fetchData import fetch_data, update_world_map
-from discord.ui import Button, View, Modal
+from discord.ui import Button, View, Select
 from botUtilities import make_embed
 
 enemyNames = [
