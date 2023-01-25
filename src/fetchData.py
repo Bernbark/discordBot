@@ -196,3 +196,22 @@ async def fetch_meme(bot, genre):
     ]):
         meme = doc
     return meme
+
+
+async def fetch_inventory(bot, _id):
+    """
+    Grabs the player's inventory if it exists, otherwise creates one for them.
+    :param bot: discord bot
+    :param _id: user ID to search for
+    :return: userInventory: list, collection
+    """
+    db = bot.mongoConnect["DiscordBot"]
+    collection = db["Inventory"]
+
+    if await collection.find_one({"_id": _id}) is None:
+        new_data = {
+            "_id": _id,
+            "inventory": []
+        }
+        await collection.insert_one(new_data)
+    return await collection.find_one({"_id": _id}), collection

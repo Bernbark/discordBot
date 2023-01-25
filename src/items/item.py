@@ -11,10 +11,17 @@ class Rarity(Enum):
 
 
 def assign_rarity():
-    randomNum = random.randint(1,5)
-    for data in Rarity:
-        if randomNum == data.value:
-            return data
+    """
+    Turn the Enum Rarity into a list and pick a random one from it
+    :return: random Rarity
+    """
+    return random.choice(list(Rarity))
+    # for data in Rarity:
+    #    if randomNum == data.value:
+    #        return data
+    #    else:
+    #        return Rarity.COMMON
+
 
 class Item:
     """

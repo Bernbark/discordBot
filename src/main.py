@@ -35,7 +35,8 @@ class MyBot(commands.Bot):
             "cogs.whatToWatch",
             "cogs.artsy",
             "cogs.exploration",
-            "cogs.shop"
+            "cogs.shop",
+            "cogs.inventory"
         ]
 
     # Loading cogs
