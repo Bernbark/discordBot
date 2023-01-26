@@ -1,9 +1,12 @@
+import asyncio.exceptions
+
 from discord.ext import commands
 from discord.ui import Select, View
 import discord
 from src.items.drink import Drink
 from src.items.randomizeItem import randomize_food, randomize_drink, randomize_weapon
 from src.fetchData import fetch_inventory
+
 
 class FoodCourtSelectMenu(Select):
     def __init__(self):
@@ -17,7 +20,7 @@ class FoodCourtSelectMenu(Select):
                 discord.SelectOption(label="Food",
                                      emoji="🍖",
                                      description=f"{self.food.name}: Heal: {self.food.healing}, Stam: {self.food.stamina}"
-                                                 f"Cost: {self.food.cost}"),
+                                                 f" Cost: {self.food.cost}"),
                 discord.SelectOption(label="Drink",
                                      emoji="🍺",
                                      description=f"{self.drink.name}: Heal: {self.drink.healing}, Stam: {self.drink.stamina}"
@@ -91,8 +94,22 @@ class GambleItemSelectMenu(Select):
 
         elif self.values[0] == "Gamble Armor":
             description = "Tried to purchase but the shop isn't open yet."
-        self.view.remove_item(self)
+
         inv = inventory["inventory"]
+        self.view.remove_item(self)
+        """if len(inv) > 10:
+            description = "Can't buy because your inventory is full. Replace lowest damage item?"
+            await interaction.response.edit_message(content=f"{description}", view=self.view)
+            try:
+                choice = await self.bot.wait_for('message', timeout=30)
+            except asyncio.exceptions.TimeoutError:
+                await interaction.followup.edit_message(content=f"Manually delete an item before trying to buy next time.", view=self.view, message_id=interaction.id)
+                return
+            if choice.content == "yes":
+                await interaction.followup.edit_message(content=f"Replaced!", view=self.view, message_id=interaction.message.id)
+            else:
+        """       # return
+        #else:
         await collection.replace_one({"_id": interaction.user.id}, inventory)
         await interaction.response.edit_message(content=f"{description}", view=self.view)
 
