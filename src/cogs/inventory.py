@@ -61,6 +61,11 @@ class ForwardButton(Button):
         A necessary method for buttons in Discord.py UI, this is what the button should do when clicked, in this case
         we want to move the inventory page forward one, and adjust button availability based on the current index
         """
+        if self.view.interaction_set is True:
+            pass
+        else:
+            self.view.interaction = interaction
+            self.view.interaction_set = True
         if self.view.cur_page == len(self.embeds):
             await self.view.ctx.send("You can't go beyond the pages you have. C'mon now!")
         else:
@@ -86,13 +91,27 @@ class InventoryView(View):
     we want to be at. This helps us control behaviors much more easily.
     """
     def __init__(self, ctx, embeds: [discord.Embed]):
-        super().__init__(timeout=100)
+        super().__init__(timeout=3)
         self.ctx = ctx
         self.embeds = embeds
         self.MAX_PAGES = len(embeds)
         self.forward_button = ForwardButton(self.embeds)
         self.add_item(self.forward_button)
         self.cur_page = 0
+        self.interaction_set = False
+        self.interaction = None
+
+
+    async def on_timeout(self):
+        """
+        This is what happens when the game is no longer interactable, we want to clear the UI probably
+        :return:
+        """
+        self.clear_items()
+        msg = self.interaction.message
+        await msg.delete()
+        await self.ctx.message.delete()
+        self.stop()
 
 
 class Inventory(commands.Cog):
@@ -102,6 +121,7 @@ class Inventory(commands.Cog):
     @commands.cooldown(4, 10, commands.BucketType.user)
     @commands.command(
         name="inventory",
+        aliases=["inv"],
         help="Look at your inventory."
     )
     async def inventory(self, ctx: commands.Context):
