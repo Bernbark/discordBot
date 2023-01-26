@@ -24,7 +24,7 @@ class BackButton(Button):
     async def callback(self, interaction: discord.Interaction):
         """
         A necessary method for buttons in Discord.py UI, this is what the button should do when clicked, in this case
-        we want to create more dynamite when dynamite is clicked, or decide if the game is over due to clicking it.
+        we want to move the inventory page back one, and adjust button availability based on the current index
         """
         if self.view.cur_page == 0:
             await self.view.ctx.send("You can't go negative pages. C'mon now!")
@@ -59,7 +59,7 @@ class ForwardButton(Button):
     async def callback(self, interaction: discord.Interaction):
         """
         A necessary method for buttons in Discord.py UI, this is what the button should do when clicked, in this case
-        we want to create more dynamite when dynamite is clicked, or decide if the game is over due to clicking it.
+        we want to move the inventory page forward one, and adjust button availability based on the current index
         """
         if self.view.cur_page == len(self.embeds):
             await self.view.ctx.send("You can't go beyond the pages you have. C'mon now!")
@@ -81,9 +81,9 @@ class ForwardButton(Button):
 
 class InventoryView(View):
     """
-    One of the coolest parts about using the View as a class is that we can add behavior to it. Such as tracking game
-    stats like the count variable that will tell us how many times the user clicked a "correct" button in the main
-    function calling the game, dynamite().
+    One of the coolest parts about using the View as a class is that we can add behavior to it. Such as tracking
+    stats like the embeds list which are our pages, and the current page we are in which is basically the list index
+    we want to be at. This helps us control behaviors much more easily.
     """
     def __init__(self, ctx, embeds: [discord.Embed]):
         super().__init__(timeout=100)
@@ -108,8 +108,10 @@ class Inventory(commands.Cog):
         user_inventory, collection = await fetch_inventory(self.bot,ctx.author.id)
         inv = user_inventory["inventory"]
 
-        inventorySize = len(inv)
-        if inventorySize > 10:
+        inventory_size = len(inv)
+
+        # make multiple pages
+        if inventory_size > 10:
             embeds = []
             embed = make_embed(f"{ctx.author.name}'s Inventory")
             count = 0
@@ -121,14 +123,18 @@ class Inventory(commands.Cog):
                 embed.add_field(name=f"'{name}'", value=f"DMG: {dmg}\nDescription: {description}\n"
                                                         f"Rarity: {rarity}")
                 count += 1
+                # every 10 we reset the count, and make a new embed while adding the previous one to the list
                 if count == 10:
                     embeds.append(embed)
                     embed = make_embed(f"{ctx.author.name}'s Inventory")
                     count = 0
+            # make sure to append the final page!
             embeds.append(embed)
+            # create the custom view, sending in any info we want
             view = InventoryView(ctx,embeds)
             print(f"Length of inv: {len(inv)}")
             print(f"Amount of embed: {len(embeds)}")
+            # start at the first page, embeds[0], the view handles the behavior from then on
             await ctx.send(embed=embeds[0],view=view)
         else:
             embed = make_embed(f"{ctx.author.name}'s Inventory")
