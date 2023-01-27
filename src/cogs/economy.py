@@ -4,9 +4,10 @@ import random
 
 import discord
 from discord import app_commands
-from discord.ext import commands
-from fetchData import fetch_data
+from discord.ext import commands, tasks
+from fetchData import fetch_data, update_banks
 from botUtilities import make_embed
+
 
 #make cups able to buy a grade up which is defense, make that next tier able to grade up to magic, buy 10 and get 1 of
 # the next grade
@@ -28,6 +29,15 @@ class economy(commands.Cog):
             "creating a zip line that goes uphill.",
             "helping the elderly with electronics."
         ]
+        self.printer.start()
+
+    def cog_unload(self):
+        self.printer.cancel()
+
+    @tasks.loop(seconds=1800)
+    async def printer(self):
+        await update_banks(self.bot)
+        print("Banks updated.")
 
     @commands.cooldown(1, 120, commands.BucketType.user)
     @commands.command(
@@ -44,12 +54,36 @@ class economy(commands.Cog):
         if amount > coins:
             userData["coins"] = 0
             userData["bank"] += coins
+            embed = make_embed("Deposit success", f"You deposited {coins} coins to the bank.")
         else:
             userData["coins"] -= amount
             userData["bank"] += amount
-        embed = make_embed("Deposit success", f"You deposited {coins} coins to the bank.")
+            embed = make_embed("Deposit success", f"You deposited {amount} coins to the bank.")
         await ctx.send(embed=embed)
         await collection.replace_one({"_id": member.id}, userData)
+
+    @commands.cooldown(1, 120, commands.BucketType.user)
+    @commands.command(
+        name="withdraw",
+        help="Withdraw your money from the bank."
+    )
+    async def withdraw(self, ctx: commands.Context, amount: int = 0):
+        if amount <= 0:
+            await ctx.send("Please choose a positive, non-zero number for the amount of coins to deposit")
+            return
+        member = ctx.author
+        user_data, collection = await fetch_data(self.bot, member.id)
+        coins_saved = user_data["bank"]
+        if amount > coins_saved:
+            user_data["bank"] = 0
+            user_data["coins"] += coins_saved
+            embed = make_embed("Withdraw success", f"You withdrew {coins_saved} coins from the bank.")
+        else:
+            user_data["bank"] -= amount
+            user_data["coins"] += amount
+            embed = make_embed("Withdraw success", f"You withdrew {amount} coins from the bank.")
+        await ctx.send(embed=embed)
+        await collection.replace_one({"_id": member.id}, user_data)
 
     @commands.cooldown(1, 120, commands.BucketType.user)
     @commands.command(

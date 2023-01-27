@@ -3,6 +3,7 @@ import random
 from src.items.food import Food
 from src.items.drink import Drink
 from src.items.weapon import Weapon
+from src.fetchData import scramble_id
 
 
 suffixes = {
@@ -64,12 +65,14 @@ MIN_STAMINA_HEALING = 5
 MAX_STAMINA_HEALING = 20
 
 
-def randomize_food() -> Food:
+def randomize_food(_id: int) -> Food:
     name = random.choice(foodNames)
     cost = random.randint(MIN_COST, MAX_COST)
     healing = random.randint(MINIMUM_FOOD_HEALING, MAX_FOOD_HEALING)
     stamina = random.randint(MIN_STAMINA_HEALING, MAX_STAMINA_HEALING)
-    food = Food(name, cost, "No description properly serves this right.", healing, stamina)
+    item_id = scramble_id(_id)
+    food = Food(item_id, name, cost, "No description properly serves this right.", healing, stamina)
+
     if food.rarity.value == 1:
         return food
     else:
@@ -77,12 +80,14 @@ def randomize_food() -> Food:
         return food
 
 
-def randomize_drink() -> Drink:
+def randomize_drink(_id: int) -> Drink:
     name = random.choice(drinkNames)
     cost = random.randint(MIN_COST, MAX_COST)
     healing = random.randint(MINIMUM_FOOD_HEALING, MAX_FOOD_HEALING)
     stamina = random.randint(MIN_STAMINA_HEALING, MAX_STAMINA_HEALING)
-    drink = Drink(name, cost, "No description properly serves this right.", healing, stamina)
+    item_id = scramble_id(_id)
+    drink = Drink(item_id, name, cost, "No description properly serves this right.", healing, stamina)
+
     if drink.rarity.value == 1:
         return drink
     else:
@@ -106,8 +111,11 @@ def assign_suffixes(weapon,num) -> Weapon:
     return weapon
 
 
-def randomize_weapon():
-    weapon = Weapon(random.choice(weaponNames))
+def randomize_weapon(_id: int):
+    item_id = scramble_id(_id)
+    weapon = Weapon(item_id,random.choice(weaponNames))
+
+    print(weapon.item_id)
     if weapon.rarity.value == 1:
         return weapon
     elif weapon.rarity.value == 2:
@@ -123,6 +131,8 @@ def randomize_weapon():
     dmg = 0
     cost = 0
     for numArray in weapon.suffixes.values():
+        print(numArray[1])
+
         cost += numArray[1]
         dmg += numArray[0]
     weapon.damage += dmg

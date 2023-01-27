@@ -1,13 +1,13 @@
 from src.items.item import Item
 
-
+# Let's make a double prefix/suffix situation, where if you have two of the same prefix, the weapon gets a big buff
 class Weapon(Item):
     """
     Weapon class to hold weapon stats
     """
-    def __init__(self, name: str = "Weapon", cost: int = 200, description: str = "Unknown",
+    def __init__(self, item_id: str, name: str = "Weapon", cost: int = 200, description: str = "Unknown",
                  dmg: int = 5):
-        super().__init__(name, cost, description)
+        super().__init__(item_id, name, cost, description)
         self.damage = dmg
         self.prefixes = []
         self.suffixes = {}

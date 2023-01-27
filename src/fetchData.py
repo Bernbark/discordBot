@@ -7,7 +7,10 @@ import random
 
 from string import ascii_letters
 
+from src.items.weapon import Weapon
+
 ENCRYPTION_LENGTH = 6
+ITEM_ENCRYPTION_LENGTH = 8
 
 
 def scramble_attack_id(_id: int) -> str:
@@ -19,6 +22,21 @@ def scramble_attack_id(_id: int) -> str:
     chars = random.choices(
         ascii_letters,
         k=ENCRYPTION_LENGTH
+    )
+    chars.extend(str(_id))
+    random.shuffle(chars)
+    return ''.join(chars)
+
+
+def scramble_id(_id: int) -> str:
+    """
+    Creates a random ID using the Discord user ID combined with random letters from the alphabet and then scrambled.
+    :param _id: Discord user ID
+    :return: a randomized ID
+    """
+    chars = random.choices(
+        ascii_letters,
+        k=ITEM_ENCRYPTION_LENGTH
     )
     chars.extend(str(_id))
     random.shuffle(chars)
@@ -139,6 +157,12 @@ async def remove_account(bot, _id):
     collection = db["Economy"]
     query = {"_id": _id}
     collection.delete_one(query)
+    collection = db["Inventory"]
+    query = {"_id": _id}
+    collection.delete_one(query)
+    collection = db["WorldMap"]
+    query = {"_id": _id}
+    collection.delete_one(query)
 
 
 async def remove_meme(bot, url):
@@ -215,3 +239,54 @@ async def fetch_inventory(bot, _id):
         }
         await collection.insert_one(new_data)
     return await collection.find_one({"_id": _id}), collection
+
+
+async def update_banks(bot):
+    """
+    Updates the banks based on how much gold is in them. Going interest rate is 3%!
+    :param bot:
+    :return:
+    """
+    db = bot.mongoConnect["DiscordBot"]
+    collection = db["Economy"]
+    await collection.update_many(
+        {},
+        {"$mul": {"bank": 1.03}},
+        upsert=False
+
+    )
+
+
+async def fetch_auction_items(bot):
+    db = bot.mongoConnect["DiscordBot"]
+    collection = db["AuctionHouse"]
+    return collection
+
+
+async def add_to_auction_house(bot, item: dict, price: int, user_id: int):
+    db = bot.mongoConnect["DiscordBot"]
+    collection = db["AuctionHouse"]
+    if await collection.find_one({"_id": item["item_id"]}) is None:
+        if price > 2000000000:
+            price = 2000000000
+        new_data = {
+            "_id": item["item_id"],
+            "item": item,
+            "price": price,
+            "owner_id": user_id
+        }
+        await collection.insert_one(new_data)
+        return True
+    else:
+        return False
+
+
+def make_weapon_serializable(weapon: Weapon):
+    weapon_dict ={
+        "name":weapon.name,
+        "dmg":weapon.damage,
+        "description":weapon.description,
+        "rarity":weapon.rarity.value,
+        "item_id":weapon.item_id
+                  }
+    return weapon_dict

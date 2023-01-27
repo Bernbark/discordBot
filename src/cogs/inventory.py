@@ -1,10 +1,8 @@
-import random
-
 import discord
 from discord.ext import commands
 from discord.ui import Button, View
 
-from src.fetchData import fetch_inventory
+from src.fetchData import fetch_inventory, add_to_auction_house
 from src.botUtilities import make_embed
 
 
@@ -91,7 +89,7 @@ class InventoryView(View):
     we want to be at. This helps us control behaviors much more easily.
     """
     def __init__(self, ctx, embeds: [discord.Embed]):
-        super().__init__(timeout=3)
+        super().__init__(timeout=30)
         self.ctx = ctx
         self.embeds = embeds
         self.MAX_PAGES = len(embeds)
@@ -100,7 +98,6 @@ class InventoryView(View):
         self.cur_page = 0
         self.interaction_set = False
         self.interaction = None
-
 
     async def on_timeout(self):
         """
@@ -117,6 +114,52 @@ class InventoryView(View):
 class Inventory(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
+
+    @commands.cooldown(4, 10, commands.BucketType.user)
+    @commands.command(
+        name="auctionitem",
+        aliases=["aitem"],
+        help="Auction from your inventory by ID"
+    )
+    async def auction_item(self, ctx: commands.Context, _id: str = None, price: int = 500):
+        if _id is None:
+            await ctx.send("Please use an ID associated with an item you own.")
+            return
+        inventory, collection = await fetch_inventory(self.bot, ctx.author.id)
+        inv = inventory["inventory"]
+        for item in inv:
+            if item["item_id"] == _id:
+                inv.remove(item)
+                added = await add_to_auction_house(self.bot,item,price,ctx.author.id)
+                if added:
+                    await ctx.send(f"Item placed on auction!")
+                    inventory["inventory"] = inv
+                    await collection.replace_one({"_id": ctx.author.id}, inventory)
+                else:
+                    await ctx.send(f"Item was not sent to auction!")
+                return
+
+        await ctx.send(f"Found nothing by that ID.")
+
+    @commands.cooldown(4, 10, commands.BucketType.user)
+    @commands.command(
+        name="sell",
+        aliases=["sellitem"],
+        help="Sell from your inventory by ID"
+    )
+    async def sell_item(self, ctx: commands.Context, _id: str = None):
+        if _id is None:
+            await ctx.send("Please use an ID associated with an item you own.")
+            return
+        inventory, collection = await fetch_inventory(self.bot, ctx.author.id)
+        inv = inventory["inventory"]
+        for item in inv:
+            if item["item_id"] == _id:
+                inv.remove(item)
+                await ctx.send(f"Sold {item}")
+                await collection.replace_one({"_id": ctx.author.id}, inventory)
+                return
+        await ctx.send(f"Found nothing by that ID.")
 
     @commands.cooldown(4, 10, commands.BucketType.user)
     @commands.command(
@@ -140,8 +183,9 @@ class Inventory(commands.Cog):
                 dmg = item['dmg']
                 description = item['description']
                 rarity = item['rarity']
+                item_id = item['item_id']
                 embed.add_field(name=f"'{name}'", value=f"DMG: {dmg}\nDescription: {description}\n"
-                                                        f"Rarity: {rarity}")
+                                                        f"Rarity: {rarity}\nID for Sale: {item_id}")
                 count += 1
                 # every 10 we reset the count, and make a new embed while adding the previous one to the list
                 if count == 10:
@@ -152,8 +196,6 @@ class Inventory(commands.Cog):
             embeds.append(embed)
             # create the custom view, sending in any info we want
             view = InventoryView(ctx,embeds)
-            print(f"Length of inv: {len(inv)}")
-            print(f"Amount of embed: {len(embeds)}")
             # start at the first page, embeds[0], the view handles the behavior from then on
             await ctx.send(embed=embeds[0],view=view)
         else:
@@ -163,8 +205,9 @@ class Inventory(commands.Cog):
                 dmg = item['dmg']
                 description = item['description']
                 rarity = item['rarity']
+                item_id = item['item_id']
                 embed.add_field(name=f"'{name}'", value=f"DMG: {dmg}\nDescription: {description}\n"
-                                                        f"Rarity: {rarity}")
+                                                        f"Rarity: {rarity}\nID for Sale: {item_id}")
             await ctx.send(embed=embed)
 
 
