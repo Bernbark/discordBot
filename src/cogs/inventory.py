@@ -24,6 +24,8 @@ class BackButton(Button):
         A necessary method for buttons in Discord.py UI, this is what the button should do when clicked, in this case
         we want to move the inventory page back one, and adjust button availability based on the current index
         """
+        self.view.interaction = interaction
+        self.view.interaction_set = True
         if self.view.cur_page == 0:
             await self.view.ctx.send("You can't go negative pages. C'mon now!")
         else:
@@ -59,11 +61,9 @@ class ForwardButton(Button):
         A necessary method for buttons in Discord.py UI, this is what the button should do when clicked, in this case
         we want to move the inventory page forward one, and adjust button availability based on the current index
         """
-        if self.view.interaction_set is True:
-            pass
-        else:
-            self.view.interaction = interaction
-            self.view.interaction_set = True
+
+        self.view.interaction = interaction
+        self.view.interaction_set = True
         if self.view.cur_page == len(self.embeds):
             await self.view.ctx.send("You can't go beyond the pages you have. C'mon now!")
         else:
@@ -89,8 +89,9 @@ class InventoryView(View):
     we want to be at. This helps us control behaviors much more easily.
     """
     def __init__(self, ctx, embeds: [discord.Embed]):
-        super().__init__(timeout=30)
+        super().__init__(timeout=5)
         self.ctx = ctx
+        self.msg = None
         self.embeds = embeds
         self.MAX_PAGES = len(embeds)
         self.forward_button = ForwardButton(self.embeds)
@@ -105,8 +106,8 @@ class InventoryView(View):
         :return:
         """
         self.clear_items()
-        msg = self.interaction.message
-        await msg.delete()
+
+        await self.msg.delete()
         await self.ctx.message.delete()
         self.stop()
 
@@ -197,7 +198,8 @@ class Inventory(commands.Cog):
             # create the custom view, sending in any info we want
             view = InventoryView(ctx,embeds)
             # start at the first page, embeds[0], the view handles the behavior from then on
-            await ctx.send(embed=embeds[0],view=view)
+            msg = await ctx.send(embed=embeds[0],view=view)
+            view.msg = msg
         else:
             embed = make_embed(f"{ctx.author.name}'s Inventory")
             for item in inv:

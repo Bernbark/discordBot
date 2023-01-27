@@ -72,7 +72,8 @@ class AuctionHouse(commands.Cog):
             # create the custom view, sending in any info we want
             view = InventoryView(ctx, embeds)
             # start at the first page, embeds[0], the view handles the behavior from then on
-            await ctx.send(embed=embeds[0], view=view)
+            msg = await ctx.send(embed=embeds[0], view=view)
+            view.msg = msg
         else:
             embed = make_embed(f"Auction House")
             async for item in auction_items:
