@@ -315,7 +315,6 @@ class funActions(commands.Cog):
             embed = make_embed("This meme has probably already been added to the Memedex")
             await ctx.send(embed=embed)
 
-
     @commands.cooldown(2, 10, commands.BucketType.user)
     @commands.command(
         name="memetypes",
@@ -339,6 +338,91 @@ class funActions(commands.Cog):
         quote = data["quote"]
         embed=make_embed(f"Kanye says: {quote}")
         await ctx.send(embed=embed)
+
+    #   %3F - this is the code for question marks
+    #   %0D%0A - new line in url
+    #   %25 - this is the code for question marks
+    @commands.cooldown(4, 10, commands.BucketType.user)
+    @commands.command(
+        name="cat",
+        help="Generate a cat pic."
+    )
+    async def cat(self, ctx: commands.Context):
+        says = ctx.message.content
+        print(says)
+        if says == "!cat":
+            request = requests.get("https://cataas.com/cat?json=true")
+            data = request.json()
+            url = data["url"]
+            await ctx.send("https://cataas.com"+url)
+        else:
+            newStr = says.strip()
+            clean_str = newStr.replace('!cat ','')
+            #refStr = refStr.replace('%', '%25')
+
+            url_parts = []
+            if len(clean_str) > 26:
+                words = clean_str.split(' ')
+                line_break = 8
+                i=1
+                if len(words) > 1:
+                    for word in words:
+                        if "." in word or i==line_break:
+                            url_parts.append(word.strip('%0D%0A') + "%0D%0A")
+                            i = 0
+                        else:
+                            url_parts.append(word.strip('%0D%0A') + " ")
+                        i += 1
+                    print(f"{url_parts}")
+                    url = ''.join(url_parts)
+                    clean_url = url.replace('?', '%3F')
+                    request = requests.get("https://cataas.com/cat/says/"+clean_url+"?json=true")
+                    data = request.json()
+                    url = data["url"]
+                    await ctx.send("https://cataas.com" + url)
+                    return
+                else:
+                    chars = []
+                    chars.extend(clean_str)
+                    line_break = 20
+                    i = 1
+                    for char in chars:
+                        if "." in char or i == line_break:
+                            url_parts.append(char.strip('%0D%0A') + "%0D%0A")
+                            i = 0
+                        else:
+                            url_parts.append(char.strip('%0D%0A') + "")
+                        i += 1
+                    url = ''.join(url_parts)
+                    clean_url = url.replace('?', '%3F')
+                    print(f"{url_parts}")
+                    request = requests.get("https://cataas.com/cat/says/" + clean_url + "?json=true")
+                    data = request.json()
+                    url = data["url"]
+                    await ctx.send("https://cataas.com" + url)
+                    return
+
+            #cleanStr = refStr.replace(' ','%20')
+            clean_str = clean_str.replace('?', '%3F')
+            url = "https://cataas.com/cat/says/"+clean_str+"?json=true"
+
+
+            request = requests.get(url)
+            data = request.json()
+            url = data["url"]
+            await ctx.send("https://cataas.com"+url)
+#https://cataas.com/cat/says/Why%20is%20this%20happening%20to%20me
+
+    @commands.cooldown(4, 10, commands.BucketType.user)
+    @commands.command(
+        name="catfact",
+        help="Generate a cat fact."
+    )
+    async def cat_fact(self, ctx: commands.Context):
+        request = requests.get("https://meowfacts.herokuapp.com/")
+        data = request.json()
+        fact = data["data"][0]
+        await ctx.send(f"Cat fact: {fact}")
 
 
 async def setup(bot: commands.Bot):

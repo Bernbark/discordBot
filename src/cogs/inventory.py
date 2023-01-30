@@ -89,7 +89,7 @@ class InventoryView(View):
     we want to be at. This helps us control behaviors much more easily.
     """
     def __init__(self, ctx, embeds: [discord.Embed]):
-        super().__init__(timeout=5)
+        super().__init__(timeout=30)
         self.ctx = ctx
         self.msg = None
         self.embeds = embeds
@@ -127,14 +127,26 @@ class Inventory(commands.Cog):
             await ctx.send("Please use an ID associated with an item you own.")
             return
         inventory, collection = await fetch_inventory(self.bot, ctx.author.id)
-        inv = inventory["inventory"]
+        inv = inventory["inventory_weapon"]
+        torso_inv = inventory["inventory_torso"]
         for item in inv:
             if item["item_id"] == _id:
                 inv.remove(item)
                 added = await add_to_auction_house(self.bot,item,price,ctx.author.id)
                 if added:
                     await ctx.send(f"Item placed on auction!")
-                    inventory["inventory"] = inv
+                    inventory["inventory_weapon"] = inv
+                    await collection.replace_one({"_id": ctx.author.id}, inventory)
+                else:
+                    await ctx.send(f"Item was not sent to auction!")
+                return
+        for item in torso_inv:
+            if item["item_id"] == _id:
+                torso_inv.remove(item)
+                added = await add_to_auction_house(self.bot,item,price,ctx.author.id)
+                if added:
+                    await ctx.send(f"Item placed on auction!")
+                    inventory["inventory_torso"] = torso_inv
                     await collection.replace_one({"_id": ctx.author.id}, inventory)
                 else:
                     await ctx.send(f"Item was not sent to auction!")
@@ -153,10 +165,17 @@ class Inventory(commands.Cog):
             await ctx.send("Please use an ID associated with an item you own.")
             return
         inventory, collection = await fetch_inventory(self.bot, ctx.author.id)
-        inv = inventory["inventory"]
+        inv = inventory["inventory_weapon"]
+        torso_inv = inventory["inventory_torso"]
         for item in inv:
             if item["item_id"] == _id:
                 inv.remove(item)
+                await ctx.send(f"Sold {item}")
+                await collection.replace_one({"_id": ctx.author.id}, inventory)
+                return
+        for item in torso_inv:
+            if item["item_id"] == _id:
+                torso_inv.remove(item)
                 await ctx.send(f"Sold {item}")
                 await collection.replace_one({"_id": ctx.author.id}, inventory)
                 return
@@ -168,31 +187,55 @@ class Inventory(commands.Cog):
         aliases=["inv"],
         help="Look at your inventory."
     )
-    async def inventory(self, ctx: commands.Context):
+    async def inventory(self, ctx: commands.Context, type: str = None):
         user_inventory, collection = await fetch_inventory(self.bot,ctx.author.id)
-        inv = user_inventory["inventory"]
-
-        inventory_size = len(inv)
+        weapon_inv, torso_inv = None, None
+        if type == "weapon":
+            weapon_inv = user_inventory["inventory_weapon"]
+            inventory_size = len(weapon_inv)
+        elif type == "torso":
+            torso_inv = user_inventory["inventory_torso"]
+            inventory_size = len(torso_inv)
+        else:
+            weapon_inv = user_inventory["inventory_weapon"]
+            torso_inv = user_inventory["inventory_torso"]
+            inventory_size = len(weapon_inv) + len(torso_inv)
 
         # make multiple pages
         if inventory_size > 10:
             embeds = []
             embed = make_embed(f"{ctx.author.name}'s Inventory")
             count = 0
-            for item in inv:
-                name = item["name"]
-                dmg = item['dmg']
-                description = item['description']
-                rarity = item['rarity']
-                item_id = item['item_id']
-                embed.add_field(name=f"'{name}'", value=f"DMG: {dmg}\nDescription: {description}\n"
-                                                        f"Rarity: {rarity}\nID for Sale: {item_id}")
-                count += 1
-                # every 10 we reset the count, and make a new embed while adding the previous one to the list
-                if count == 10:
-                    embeds.append(embed)
-                    embed = make_embed(f"{ctx.author.name}'s Inventory")
-                    count = 0
+            if type == "weapon" or type is None:
+                for item in weapon_inv:
+                    name = item["name"]
+                    dmg = item['dmg']
+                    description = item['description']
+                    rarity = item['rarity']
+                    item_id = item['item_id']
+                    embed.add_field(name=f"'{name}'", value=f"DMG: {dmg}\nDescription: {description}\n"
+                                                            f"Rarity: {rarity}\nID for Sale: {item_id}")
+                    count += 1
+                    # every 10 we reset the count, and make a new embed while adding the previous one to the list
+                    if count == 10:
+                        embeds.append(embed)
+                        embed = make_embed(f"{ctx.author.name}'s Inventory")
+                        count = 0
+            if type == "torso" or type is None:
+                for item in torso_inv:
+                    name = item["name"]
+                    defense = item['def']
+                    description = item['description']
+                    rarity = item['rarity']
+                    item_id = item['item_id']
+                    embed.add_field(name=f"'{name}'", value=f"DMG: {defense}\nDescription: {description}\n"
+                                                            f"Rarity: {rarity}\nID for Sale: {item_id}")
+                    count += 1
+                    # every 10 we reset the count, and make a new embed while adding the previous one to the list
+                    if count == 10:
+                        embeds.append(embed)
+                        embed = make_embed(f"{ctx.author.name}'s Inventory")
+                        count = 0
             # make sure to append the final page!
             embeds.append(embed)
             # create the custom view, sending in any info we want
@@ -202,14 +245,24 @@ class Inventory(commands.Cog):
             view.msg = msg
         else:
             embed = make_embed(f"{ctx.author.name}'s Inventory")
-            for item in inv:
-                name = item["name"]
-                dmg = item['dmg']
-                description = item['description']
-                rarity = item['rarity']
-                item_id = item['item_id']
-                embed.add_field(name=f"'{name}'", value=f"DMG: {dmg}\nDescription: {description}\n"
-                                                        f"Rarity: {rarity}\nID for Sale: {item_id}")
+            if type == "weapon" or type is None:
+                for item in weapon_inv:
+                    name = item["name"]
+                    dmg = item['dmg']
+                    description = item['description']
+                    rarity = item['rarity']
+                    item_id = item['item_id']
+                    embed.add_field(name=f"'{name}'", value=f"DMG: {dmg}\nDescription: {description}\n"
+                                                            f"Rarity: {rarity}\nID for Sale: {item_id}")
+            if type == "torso" or type is None:
+                for item in torso_inv:
+                    name = item["name"]
+                    defense = item['def']
+                    description = item['description']
+                    rarity = item['rarity']
+                    item_id = item['item_id']
+                    embed.add_field(name=f"'{name}'", value=f"DMG: {defense}\nDescription: {description}\n"
+                                                            f"Rarity: {rarity}\nID for Sale: {item_id}")
             await ctx.send(embed=embed)
 
 

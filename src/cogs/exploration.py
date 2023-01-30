@@ -4,9 +4,10 @@ import random
 import time
 import discord
 from discord.ext import commands
-from fetchData import fetch_data, update_world_map
+from src.fetchData import fetch_data, update_world_map, fetch_inventory, make_weapon_serializable, fetch_player_map_info
 from discord.ui import Button, View, Select
 from botUtilities import make_embed
+from src.items.randomizeItem import randomize_weapon
 
 enemyNames = [
     "Goblin",
@@ -23,6 +24,31 @@ enemyNames = [
     "Red Stapler",
     "Permanent Clothing Stain"
 ]
+
+
+def boss_battle(health, position, view):
+    boss_name = random.choice(enemyNames)
+    distanceBuff = abs(position["horizontal"]) + abs(position["vertical"])
+    enemyHealth = random.randint(100 + distanceBuff, 1000 + distanceBuff)
+    health -= enemyHealth
+    description = ""
+    if health > 0:
+
+        goldEarned = random.randint(0 + health, 1000 + health)
+        description = f"You fought a BOSS {boss_name} who had {enemyHealth} health and won!\nEarned {goldEarned} coins.\n"
+        view.goldEarned += goldEarned
+    else:
+        description = "You lost miserably to the boss, try again in 50 steps!"
+        health = 0
+    return description, health
+
+
+def check_for_major_event(view):
+    description = ""
+    health = view.health
+    if view.steps % 50 == 0:
+        description, health = boss_battle(view.health, view.position, view)
+    return description, health
 
 
 def normal_battle(health, position, view):
@@ -81,9 +107,10 @@ def random_encounter(health, position, view):
         return f"You find the mysterious stranger! {description}", newHealth, view
 
 
-def player_info(health, position):
+def player_info(health, position, steps):
     return f"\nPlayer health: {health}\n" \
-           f"Position:{position}"
+           f"Position:{position}\n" \
+           f"Steps: {steps}"
 
 
 class ExploreNorth(Button):
@@ -92,17 +119,7 @@ class ExploreNorth(Button):
 
     async def callback(self, interaction: discord.Interaction):
         self.view.position["vertical"] += 1
-        if self.view.health > 0:
-            description, self.view.health, newView = random_encounter(self.view.health, self.view.position, self.view)
-            await interaction.response.edit_message(content="", view=newView, embed=make_embed("Went North",
-                                                                                               f"{description}{player_info(self.view.health, self.view.position)}",
-                                                                                               ""))
-        else:
-            self.view.clear_items()
-            await interaction.response.edit_message(content="", view=self.view,
-                                                    embed=make_embed("You are dead! Await your results.",
-                                                                     f"{player_info(self.view.health, self.view.position)}",
-                                                                     ""))
+        await travel(self.view, interaction, "North")
 
 
 class ExploreWest(Button):
@@ -111,17 +128,7 @@ class ExploreWest(Button):
 
     async def callback(self, interaction: discord.Interaction):
         self.view.position["horizontal"] -= 1
-        if self.view.health > 0:
-            description, self.view.health, newView = random_encounter(self.view.health, self.view.position, self.view)
-            await interaction.response.edit_message(content="", view=newView, embed=make_embed("Went West",
-                                                                                               f"{description}{player_info(self.view.health, newView.position)}",
-                                                                                               ""))
-        else:
-            self.view.clear_items()
-            await interaction.response.edit_message(content="", view=self.view,
-                                                    embed=make_embed("You are dead! Await your results.",
-                                                                     f"{player_info(self.view.health, self.view.position)}",
-                                                                     ""))
+        await travel(self.view, interaction, "West")
 
 
 class ExploreEast(Button):
@@ -130,17 +137,7 @@ class ExploreEast(Button):
 
     async def callback(self, interaction: discord.Interaction):
         self.view.position["horizontal"] += 1
-        if self.view.health > 0:
-            description, self.view.health, newView = random_encounter(self.view.health, self.view.position, self.view)
-            await interaction.response.edit_message(content="", view=newView, embed=make_embed("Went East",
-                                                                                               f"{description}{player_info(self.view.health, self.view.position)}",
-                                                                                               ""))
-        else:
-            self.view.clear_items()
-            await interaction.response.edit_message(content="", view=self.view,
-                                                    embed=make_embed("You are dead! Await your results.",
-                                                                     f"{player_info(self.view.health, self.view.position)}",
-                                                                     ""))
+        await travel(self.view, interaction, "East")
 
 
 class ExploreSouth(Button):
@@ -149,17 +146,7 @@ class ExploreSouth(Button):
 
     async def callback(self, interaction: discord.Interaction):
         self.view.position["vertical"] -= 1
-        if self.view.health > 0:
-            description, self.view.health, newView = random_encounter(self.view.health, self.view.position, self.view)
-            await interaction.response.edit_message(content="", view=newView, embed=make_embed("Went South",
-                                                                                               f"{description}{player_info(self.view.health, self.view.position)}",
-                                                                                               ""))
-        else:
-            self.view.clear_items()
-            await interaction.response.edit_message(content="", view=self.view,
-                                                    embed=make_embed("You are dead! Await your results.",
-                                                                     f"{player_info(self.view.health, self.view.position)}",
-                                                                     ""))
+        await travel(self.view, interaction, "South")
 
 
 class SpacerButton(Button):
@@ -171,22 +158,26 @@ class SpacerButton(Button):
             description, self.view.health, newView = random_encounter(self.view.health, self.view.position, self.view)
             await interaction.response.edit_message(content="", view=newView,
                                                     embed=make_embed("Don't click the waffles...",
-                                                                     f"{description}{player_info(self.view.health, self.view.position)}",
+                                                                     f"{description}{player_info(self.view.health, self.view.position, self.view.steps)}",
                                                                      ""))
         else:
             self.view.clear_items()
             await interaction.response.edit_message(content="", view=self.view,
                                                     embed=make_embed("You are dead! Await your results.",
-                                                                     f"{player_info(self.view.health, self.view.position)}",
-                                                                     ""))
+                                                                     f"{player_info(self.view.health, self.view.position, self.view.steps)}",
+                                                                  ""))
 
 
 class ExploreView(View):
-    def __init__(self, health, position):
-        super().__init__()
+    def __init__(self, health, position, bot, ctx, steps, user_data, collection):
+        super().__init__(timeout=10)
         self.health = health
         self.position = position
         self.goldEarned = 0
+        self.bot = bot
+        self.ctx = ctx
+        self.user_data = user_data
+        self.collection = collection
         button = SpacerButton(1)
         self.add_item(button)
         button = ExploreNorth()
@@ -205,9 +196,52 @@ class ExploreView(View):
         self.add_item(button)
         button = ExploreEast()
         self.add_item(button)
+        self.steps = steps
         # let's eventually save where the player is "resting", when player's scout each other,
         # they can see this position
         # and try to reach it for extra rewards
+
+    # 61 203 63 225
+    async def on_timeout(self):
+        print("Explore: timeout")
+        self.user_data["position"] = self.position
+        self.user_data["coins"] += self.goldEarned
+        await self.collection.replace_one({"_id": self.ctx.author.id}, self.user_data)
+        await self.ctx.send(f"{self.ctx.author.name} earned {self.goldEarned} gold on their adventure.")
+        await update_world_map(self.bot, self.user_data["_id"], self.position, self.steps)
+
+
+async def check_for_items(description: str, view: ExploreView, interaction: discord.Interaction):
+    if description == "":
+        return
+    else:
+        weapon = randomize_weapon(view.ctx.author.id)
+        inventory, collection = await fetch_inventory(view.bot, view.ctx.author.id)
+        weapon_dict = make_weapon_serializable(weapon)
+        inventory["inventory_weapon"].append(weapon_dict)
+        await collection.replace_one({"_id": view.ctx.author.id}, inventory)
+        await asyncio.sleep(2)
+        await interaction.followup.edit_message(content=f"Earned {weapon}", view=view,
+                                                embed=make_embed("Boss defeated!",
+                                                                 f"{description}{player_info(view.health, view.position, view.steps)}",
+                                                                 ""), message_id=interaction.message.id)
+
+
+async def travel(view: ExploreView, interaction: discord.Interaction, direction: str):
+    if view.health > 0:
+        description, view.health, newView = random_encounter(view.health, view.position, view)
+        await interaction.response.edit_message(content="", view=newView, embed=make_embed(f"Went {direction}",
+                                                                                           f"{description}{player_info(view.health, view.position, view.steps)}",
+                                                                                           ""))
+        view.steps += 1
+        description, view.health = check_for_major_event(view)
+        await check_for_items(description, view, interaction)
+    else:
+        view.clear_items()
+        await interaction.response.edit_message(content="", view=view,
+                                                embed=make_embed("You are dead! Await your results.",
+                                                                 f"{player_info(view.health, view.position, view.steps)}",
+                                                                 ""))
 
 
 class exploration(commands.Cog):
@@ -228,16 +262,13 @@ class exploration(commands.Cog):
         health = userData["cups"]
 
         position = userData["position"]
-        view = ExploreView(health, position)
-        embed = make_embed(f"Exploration began at position: {position}", "You get 2 minutes to make the best of "
-                                                                         "this exploration...Good luck!")
-        msg = await ctx.send(embed=embed, view=view, delete_after=120)
-        await asyncio.sleep(121)
-        userData["position"] = view.position
-        userData["coins"] += view.goldEarned
-        await collection.replace_one({"_id": ctx.author.id}, userData)
-        await ctx.send(f"{ctx.author.name} earned {view.goldEarned} gold on their adventure.")
-        await update_world_map(self.bot, userData["_id"], view.position)
+        map_info, map_collection = await fetch_player_map_info(self.bot, ctx.author.id)
+        steps = map_info["steps"]
+        view = ExploreView(health, position, self.bot, ctx, steps, userData, collection)
+        embed = make_embed(f"Exploration began at position: {position}", "You get to make the best of "
+                                                                         "this exploration as long as you stay alive...Good luck!")
+        msg = await ctx.send(embed=embed, view=view)
+
 
 
 async def setup(bot: commands.Bot):

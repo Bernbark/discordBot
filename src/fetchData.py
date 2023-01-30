@@ -7,6 +7,7 @@ import random
 
 from string import ascii_letters
 
+from src.items.torso_armor import TorsoArmor
 from src.items.weapon import Weapon
 
 ENCRYPTION_LENGTH = 6
@@ -72,10 +73,27 @@ async def find_by_attack_id(bot, attack_id: str):
     return data
 
 
-async def update_world_map(bot, _id, position):
+async def fetch_player_map_info(bot, _id):
+    db = bot.mongoConnect["DiscordBot"]
+    #   automatically creates genre if not present
+    collection = db["WorldMap"]
+    data = {
+        "_id": _id,
+        "position": {"horizontal": 0, "vertical": 0},
+        "steps": 0
+    }
+    if await collection.find_one({"_id": _id}) is None:
+        await collection.insert_one(data)
+        return data, collection
+    data = await collection.find_one({"_id": _id})
+    return data, collection
+
+
+async def update_world_map(bot, _id, position, steps):
     """
     Updates the database of the player's coordinates on the world map
     which is relevant during exploration.
+    :param steps: int
     :param bot: Discord bot
     :param _id: Discord user ID
     :param position: a dict, looking like this:
@@ -89,12 +107,13 @@ async def update_world_map(bot, _id, position):
     collection = db["WorldMap"]
     data = {
         "_id": _id,
-        "position": position
+        "position": position,
+        "steps": steps
     }
     if await collection.find_one({"_id": _id}) is None:
-        collection.insert_one(data)
+        await collection.insert_one(data)
     else:
-        collection.replace_one({"_id": _id}, data)
+        await collection.replace_one({"_id": _id}, data)
 
 
 async def fetch_data(bot, _id):
@@ -235,7 +254,8 @@ async def fetch_inventory(bot, _id):
     if await collection.find_one({"_id": _id}) is None:
         new_data = {
             "_id": _id,
-            "inventory": []
+            "inventory_weapon": [],
+            "inventory_torso": []
         }
         await collection.insert_one(new_data)
     return await collection.find_one({"_id": _id}), collection
@@ -273,7 +293,7 @@ async def add_to_auction_house(bot, item: dict, price: int, user_id: int):
             "_id": item["item_id"],
             "item": item,
             "price": price,
-            "owner_id": user_id
+            "owner_id": user_id,
         }
         await collection.insert_one(new_data)
         return True
@@ -287,6 +307,19 @@ def make_weapon_serializable(weapon: Weapon):
         "dmg":weapon.damage,
         "description":weapon.description,
         "rarity":weapon.rarity.value,
-        "item_id":weapon.item_id
+        "item_id":weapon.item_id,
+        "type":"weapon"
                   }
     return weapon_dict
+
+
+def make_torso_serializable(armor: TorsoArmor):
+    armor_dict ={
+        "name":armor.name,
+        "def":armor.defense,
+        "description":armor.description,
+        "rarity":armor.rarity.value,
+        "item_id":armor.item_id,
+        "type": "torso"
+                  }
+    return armor_dict

@@ -33,6 +33,7 @@ class Item:
         self.cost = cost
         self.description = description
         self.item_id = item_id
+        self.type = "Item"
 
     def set_cost(self, cost):
         self.cost = cost

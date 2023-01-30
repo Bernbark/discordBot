@@ -5,7 +5,6 @@ import random
 import aiohttp
 import discord
 import motor.motor_asyncio
-
 from discord.ext import commands
 from discord.ext.commands import bot
 from dotenv import load_dotenv

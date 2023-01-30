@@ -1,7 +1,9 @@
 import random
 
+from src.items.armor import Armor
 from src.items.food import Food
 from src.items.drink import Drink
+from src.items.torso_armor import TorsoArmor
 from src.items.weapon import Weapon
 from src.fetchData import scramble_id
 
@@ -17,18 +19,27 @@ suffixes = {
     "Disgrace":[-2,5000],
     "Honorbound":[6, 27000],
     "The Reaper":[15,75000],
+    "The Lost":[4,20000],
+    "Apocalypse":[11,40000]
 }
 
-prefixes = [
-    "Disturbing",
-    "Powerful",
-    "Wicked",
-    "Enchanted",
-    "Cursed",
-    "Simple",
-    "Broken",
-    "Polished"
-]
+prefixes = {
+    "Disturbing":[4,10000],
+    "Powerful":[7,10000],
+    "Wicked":[8,10000],
+    "Enchanted":[4,10000],
+    "Cursed":[-5,10000],
+    "Simple":[1,10000],
+    "Broken":[-1,10000],
+    "Polished":[2,10000],
+    "Masterful":[15,10000],
+    "Glorious":[9,10000],
+    "Calibrated":[5,10000],
+    "Blursed":[0,10000],
+    "Eternal":[12,10000],
+    "Fabricated":[-2,10000],
+    "Solid":[3,10000]
+}
 
 weaponNames = [
     "Great Axe",
@@ -40,7 +51,13 @@ weaponNames = [
     "Mace",
     "Maul",
     "Claws",
-    "Scepter"
+    "Scepter",
+    "Spear",
+    "Blade",
+    "Pistol",
+    "Bazooka",
+    "Scimitar",
+    "Rusty Spoon"
 ]
 
 foodNames = [
@@ -97,8 +114,10 @@ def randomize_drink(_id: int) -> Drink:
 
 def assign_prefixes(weapon,num) -> Weapon:
     randomNum = random.randint(1, num)
+    pref_names = []
     for i in range(0, randomNum):
-        weapon.set_prefix(random.choice(prefixes))
+        pref_names.append(random.choice(list(prefixes.keys())))
+        weapon.set_prefixes(pref_names,prefixes)
     return weapon
 
 
@@ -119,8 +138,9 @@ def randomize_weapon(_id: int):
     if weapon.rarity.value == 1:
         return weapon
     elif weapon.rarity.value == 2:
-        weapon.set_prefix(random.choice(prefixes))
+        pref_names = [random.choice(list(prefixes.keys()))]
         suffNames = [random.choice(list(suffixes.keys()))]
+        weapon.set_prefixes(pref_names,prefixes)
         weapon.set_suffixes(suffNames,suffixes)
     else:
         weapon = assign_prefixes(weapon, weapon.rarity.value)
@@ -131,8 +151,9 @@ def randomize_weapon(_id: int):
     dmg = 0
     cost = 0
     for numArray in weapon.suffixes.values():
-        print(numArray[1])
-
+        cost += numArray[1]
+        dmg += numArray[0]
+    for numArray in weapon.prefixes.values():
         cost += numArray[1]
         dmg += numArray[0]
     weapon.damage += dmg
@@ -140,3 +161,8 @@ def randomize_weapon(_id: int):
     weapon.adjust_name_for_prefsuf()
     return weapon
 
+
+def randomize_armor(_id: int):
+    item_id = scramble_id(_id)
+    armor = TorsoArmor(item_id)
+    return armor

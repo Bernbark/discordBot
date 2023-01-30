@@ -21,5 +21,5 @@ def make_embed(title: str = "", description: str = "", url: str = "") -> discord
     )
     embed.set_image(url=url)
     embed.add_field(name="**CRUDBot**", value="-----------------------")
-    embed.set_footer(text="'Bot written by Kory Stennett'")
+    embed.set_footer(text="`Bot written by Kory Stennett`")
     return embed

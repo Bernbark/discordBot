@@ -10,3 +10,4 @@ class Food(Item):
         super().__init__(item_id, name, cost, description)
         self.healing = healing
         self.stamina = stamina
+        self.type = "food"

@@ -4,8 +4,8 @@ from discord.ext import commands
 from discord.ui import Select, View
 import discord
 from src.items.drink import Drink
-from src.items.randomizeItem import randomize_food, randomize_drink, randomize_weapon
-from src.fetchData import fetch_inventory, make_weapon_serializable
+from src.items.randomizeItem import randomize_food, randomize_drink, randomize_weapon, randomize_armor
+from src.fetchData import fetch_inventory, make_weapon_serializable, make_torso_serializable
 
 
 class FoodCourtSelectMenu(Select):
@@ -57,16 +57,24 @@ class GambleItemSelectMenu(Select):
     def __init__(self,bot,_id):
         self.bot = bot
         self.weapon = randomize_weapon(_id)
+        self.armor = randomize_armor(_id)
         self.placeholderText = "Items"
-        if self.weapon.rarity.value == 5:
+        if self.weapon.rarity.value == 5 or self.armor.rarity.value == 5:
             self.placeholderText += " * Legendary Appeared *"
-        self.weapon_description =f"{self.weapon.name}\n" \
-                                 f"Dmg: {self.weapon.damage}\n" \
-                                 f"Cost: {self.weapon.cost}"
-        if len(self.weapon.description) > 80:
-            self.weapon_description=f"Dmg: {self.weapon.damage}\n" \
-                                    f"Cost: {self.weapon.cost}\n" \
-                                    f"{self.weapon.rarity}"
+        self.weapon_description = f"{self.weapon.name}\n" \
+                                  f"Dmg: {self.weapon.damage}\n" \
+                                  f"Cost: {self.weapon.cost}"
+        if len(self.weapon_description) > 80:
+            self.weapon_description = f"Dmg: {self.weapon.damage}\n" \
+                                      f"Cost: {self.weapon.cost}\n" \
+                                      f"{self.weapon.rarity}"
+        self.armor_description = f"{self.armor.name}\n" \
+                                 f"Def: {self.armor.defense}\n" \
+                                 f"Cost: {self.armor.cost}"
+        if len(self.armor_description) > 80:
+            self.armor_description = f"Def: {self.armor.defense}\n" \
+                                      f"Cost: {self.armor.cost}\n" \
+                                      f"{self.armor.rarity}"
 
         super(GambleItemSelectMenu, self).__init__(
             placeholder=self.placeholderText,
@@ -78,7 +86,7 @@ class GambleItemSelectMenu(Select):
 
                 discord.SelectOption(label="Gamble Armor",
                                      emoji="🛡",
-                                     description="Take a chance on some new armor!")
+                                     description=self.armor_description)
             ]
         )
 
@@ -89,12 +97,14 @@ class GambleItemSelectMenu(Select):
             description = f"Bought a {self.weapon.name}. \n{self.weapon.description}\nDamage: {self.weapon.damage}\n" \
                           f"Cost: {self.weapon.cost}\n" \
                           f"Rarity: {self.weapon.rarity}"
-            inventory["inventory"].append(make_weapon_serializable(self.weapon))
+            inventory["inventory_weapon"].append(make_weapon_serializable(self.weapon))
 
         elif self.values[0] == "Gamble Armor":
-            description = "Tried to purchase but the shop isn't open yet."
+            description = f"Bought a {self.armor.name}. \n{self.armor.description}\nDefense: {self.armor.defense}\n" \
+                          f"Cost: {self.armor.cost}\n" \
+                          f"Rarity: {self.armor.rarity}"
+            inventory["inventory_torso"].append(make_torso_serializable(self.armor))
 
-        inv = inventory["inventory"]
         self.view.remove_item(self)
         """if len(inv) > 10:
             description = "Can't buy because your inventory is full. Replace lowest damage item?"
@@ -129,7 +139,7 @@ class Shop(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
-    @commands.cooldown(2, 10, commands.BucketType.user)
+    @commands.cooldown(3, 10, commands.BucketType.user)
     @commands.command(name="shop", help="Buy from the random item shop.")
     async def shop(self, ctx: commands.Context):
         """

@@ -9,15 +9,17 @@ class Weapon(Item):
                  dmg: int = 5):
         super().__init__(item_id, name, cost, description)
         self.damage = dmg
-        self.prefixes = []
+        self.prefixes = {}
         self.suffixes = {}
+        self.type = "weapon"
 
     def set_suffixes(self, suffixes: [str], all_suffixes: dict):
         for suffix in suffixes:
             self.suffixes[suffix] = all_suffixes[suffix]
 
-    def set_prefix(self, prefix: str):
-        self.prefixes.append(prefix)
+    def set_prefixes(self, prefixes: [str], all_prefixes: dict):
+        for prefix in prefixes:
+            self.prefixes[prefix] = all_prefixes[prefix]
 
     def set_dmg(self,damage: int):
         """
