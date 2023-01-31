@@ -8,19 +8,14 @@ class Rarity(Enum):
     RARE = 3
     EPIC = 4
     LEGENDARY = 5
-
-
-def assign_rarity():
-    """
-    Turn the Enum Rarity into a list and pick a random one from it
-    :return: random Rarity
-    """
-    return random.choice(list(Rarity))
-    # for data in Rarity:
-    #    if randomNum == data.value:
-    #        return data
-    #    else:
-    #        return Rarity.COMMON
+    
+    @classmethod
+    def random(cls) -> 'Rarity':
+        """
+        Turn the Enum Rarity into a list and pick a random one from it
+        :return: random Rarity
+        """
+        return random.choice(list(cls))
 
 
 class Item:
@@ -28,7 +23,7 @@ class Item:
     Base class for Items, from here we build up and make food, drinks, armor, and weapons
     """
     def __init__(self, item_id: str = "", name: str = "Default Item", cost: int = 999, description: str = "Unknown"):
-        self.rarity = assign_rarity()
+        self.rarity = Rarity.random()
         self.name = name
         self.cost = cost
         self.description = description
