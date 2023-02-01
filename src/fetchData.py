@@ -13,20 +13,22 @@ from src.items.weapon import Weapon
 ENCRYPTION_LENGTH = 6
 ITEM_ENCRYPTION_LENGTH = 8
 
-
+def __scramble(_id: int, encryption_length: int) -> str:
+    chars = random.choices(
+        ascii_letters,
+        k=encryption_length
+    )
+    chars.extend(str(_id))
+    random.shuffle(chars)
+    return ''.join(chars)
+    
 def scramble_attack_id(_id: int) -> str:
     """
     Creates a random ID using the Discord user ID combined with random letters from the alphabet and then scrambled.
     :param _id: Discord user ID
     :return: a randomized ID to attack players with
     """
-    chars = random.choices(
-        ascii_letters,
-        k=ENCRYPTION_LENGTH
-    )
-    chars.extend(str(_id))
-    random.shuffle(chars)
-    return ''.join(chars)
+    return __scramble(_id, ENCRYPTION_LENGTH)
 
 
 def scramble_id(_id: int) -> str:
@@ -35,13 +37,7 @@ def scramble_id(_id: int) -> str:
     :param _id: Discord user ID
     :return: a randomized ID
     """
-    chars = random.choices(
-        ascii_letters,
-        k=ITEM_ENCRYPTION_LENGTH
-    )
-    chars.extend(str(_id))
-    random.shuffle(chars)
-    return ''.join(chars)
+    return __scramble(_id, ITEM_ENCRYPTION_LENGTH)
 
 
 async def update_attack_id(bot, _id):
