@@ -36,7 +36,8 @@ class MyBot(commands.Bot):
             "cogs.exploration",
             "cogs.shop",
             "cogs.inventory",
-            "cogs.auctionHouse"
+            "cogs.auctionHouse",
+            "cogs.memes"
         ]
 
     # Loading cogs
@@ -45,13 +46,14 @@ class MyBot(commands.Bot):
         for ext in self.initial_extensions:
             await self.load_extension(ext)
 
-        await bot.tree.sync()
+
 
     async def close(self):
         await super().close()
         await self.session.close()
 
     async def on_ready(self):
+        await bot.tree.sync()
         print(f'{self.user} has connected to Discord!')
 
 bot = MyBot()
@@ -62,6 +64,19 @@ async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandOnCooldown):
         await ctx.send('This command is on a %.2fs cooldown' % error.retry_after)
     raise error  # re-raise the error so all the errors will still show up in console
+
+
+@bot.event
+async def on_message(message: discord.Message):
+    special_users = [492979732464402450,673664621521141781,235148962103951360]
+    if message.author.id in special_users and "❤" in message.content:
+        print("True")
+
+        message.content = message.content.replace("❤","<:orange_heart:1070140507499540560>")
+        await message.delete()
+        await message.channel.send(content=message.content)
+    else:
+        await bot.process_commands(message)
 
 @bot.command(
         name="yo"

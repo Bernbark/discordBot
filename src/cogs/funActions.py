@@ -5,23 +5,24 @@ import requests
 import aiohttp
 import discord
 from discord import app_commands
+from discord.app_commands import Choice
 from discord.ext import commands
 from fetchData import find_by_attack_id, update_attack_id, fetch_meme, add_meme, remove_meme, fetch_data
 from botUtilities import make_embed
 import pymongo
 import magic
 import os
+# importing modules
+import urllib.request
+from PIL import Image, ImageDraw, ImageSequence, ImageFont
+Image.MAX_IMAGE_PIXELS = 933120000
+import io
+
 
 class funActions(commands.Cog):
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        self.acceptedGenres = [
-            "confused",
-            "happy",
-            "sad",
-            "test",
-        ]
 
     @commands.cooldown(5, 120, commands.BucketType.user)
     @commands.command(
@@ -262,69 +263,6 @@ class funActions(commands.Cog):
         await collection.replace_one({"_id": user.id}, randomUser)
         await update_attack_id(self.bot, user.id)
 
-    @commands.cooldown(4, 10, commands.BucketType.user)
-    @commands.command(
-        name="meme",
-        help="Generate a meme from one of the meme genres."
-    )
-    async def meme(self, ctx: commands.Context, genre: str = ""):
-
-        meme = await fetch_meme(self.bot, genre)
-        await ctx.send(content=meme["_id"])
-
-
-    @commands.cooldown(2, 10, commands.BucketType.user)
-    @commands.command(
-        name="addmeme",
-        help="Add a meme by giving it a genre and an image url (copy image address/location and paste)."
-    )
-    async def addNewMeme(self, ctx: commands.Context, genre: str = "", url: str = None):
-        await asyncio.sleep(6)
-        msg = ctx.message
-
-        if len(msg.embeds) == 0:
-            embed = make_embed("This won't be accepted as an image/gif")
-            await ctx.send(embed=embed)
-            return
-        if url is None:
-            embed = make_embed("You didn't enter an image url")
-            await ctx.send(embed=embed)
-            return
-        if genre == "":
-            embed = make_embed("You need to choose a genre for this meme to be referenced by.")
-            await ctx.send(embed=embed)
-            return
-        if genre not in self.acceptedGenres:
-            embed = make_embed(f"You need to choose a genre from this list: {self.acceptedGenres}")
-            await ctx.send(embed=embed)
-            return
-        name, extension = os.path.splitext(url)
-        # List valid extensions
-        #ext = [".png", ".jpg", ".jpeg", ".cr2", ".nef", ".tif", ".bmp", ".gif"]
-        notAllowedExt = [".io", ".com", ".org", ".gov",".io/",""]
-
-        if extension in notAllowedExt:
-            embed = make_embed(f"You need to use a real image, preferably from an online source.")
-            await ctx.send(embed=embed)
-            return
-        try:
-            await add_meme(self.bot,genre,url)
-            embed = make_embed("Oh boy, a new meme added!")
-            await ctx.send(embed=embed)
-        except:
-            embed = make_embed("This meme has probably already been added to the Memedex")
-            await ctx.send(embed=embed)
-
-    @commands.cooldown(2, 10, commands.BucketType.user)
-    @commands.command(
-        name="memetypes",
-        help="Show which genres of memes you can upload to the bot."
-    )
-    async def memeTypes(self, ctx: commands.Context, genre: str = ""):
-
-        embed = make_embed("Allowed types for adding:",f"{self.acceptedGenres}")
-        await ctx.send(embed=embed)
-
     @commands.cooldown(2, 10, commands.BucketType.user)
     @commands.command(
         name="kanye",
@@ -350,67 +288,73 @@ class funActions(commands.Cog):
     async def cat(self, ctx: commands.Context):
         says = ctx.message.content
         print(says)
-        if says == "!cat":
-            request = requests.get("https://cataas.com/cat?json=true")
-            data = request.json()
-            url = data["url"]
-            await ctx.send("https://cataas.com"+url)
-        else:
-            newStr = says.strip()
-            clean_str = newStr.replace('!cat ','')
-            #refStr = refStr.replace('%', '%25')
+        try:
+            if says == "!cat":
 
-            url_parts = []
-            if len(clean_str) > 26:
-                words = clean_str.split(' ')
-                line_break = 8
-                i=1
-                if len(words) > 1:
-                    for word in words:
-                        if "." in word or i==line_break:
-                            url_parts.append(word.strip('%0D%0A') + "%0D%0A")
-                            i = 0
-                        else:
-                            url_parts.append(word.strip('%0D%0A') + " ")
-                        i += 1
-                    print(f"{url_parts}")
-                    url = ''.join(url_parts)
-                    clean_url = url.replace('?', '%3F')
-                    request = requests.get("https://cataas.com/cat/says/"+clean_url+"?json=true")
-                    data = request.json()
-                    url = data["url"]
-                    await ctx.send("https://cataas.com" + url)
-                    return
-                else:
-                    chars = []
-                    chars.extend(clean_str)
-                    line_break = 20
-                    i = 1
-                    for char in chars:
-                        if "." in char or i == line_break:
-                            url_parts.append(char.strip('%0D%0A') + "%0D%0A")
-                            i = 0
-                        else:
-                            url_parts.append(char.strip('%0D%0A') + "")
-                        i += 1
-                    url = ''.join(url_parts)
-                    clean_url = url.replace('?', '%3F')
-                    print(f"{url_parts}")
-                    request = requests.get("https://cataas.com/cat/says/" + clean_url + "?json=true")
-                    data = request.json()
-                    url = data["url"]
-                    await ctx.send("https://cataas.com" + url)
-                    return
+                request = requests.get("https://cataas.com/cat?json=true")
+                print(request)
+                data = request.json()
+                print(data)
+                url = data["url"]
+                await ctx.send("https://cataas.com"+url)
+            else:
+                newStr = says.strip()
+                clean_str = newStr.replace('!cat ','')
+                #refStr = refStr.replace('%', '%25')
 
-            #cleanStr = refStr.replace(' ','%20')
-            clean_str = clean_str.replace('?', '%3F')
-            url = "https://cataas.com/cat/says/"+clean_str+"?json=true"
+                url_parts = []
+                if len(clean_str) > 26:
+                    words = clean_str.split(' ')
+                    line_break = 8
+                    i=1
+                    if len(words) > 1:
+                        for word in words:
+                            if "." in word or i==line_break:
+                                url_parts.append(word.strip('%0D%0A') + "%0D%0A")
+                                i = 0
+                            else:
+                                url_parts.append(word.strip('%0D%0A') + " ")
+                            i += 1
+                        print(f"{url_parts}")
+                        url = ''.join(url_parts)
+                        clean_url = url.replace('?', '%3F')
+                        request = requests.get("https://cataas.com/cat/says/"+clean_url+"?json=true")
+                        data = request.json()
+                        url = data["url"]
+                        await ctx.send("https://cataas.com" + url)
+                        return
+                    else:
+                        chars = []
+                        chars.extend(clean_str)
+                        line_break = 20
+                        i = 1
+                        for char in chars:
+                            if "." in char or i == line_break:
+                                url_parts.append(char.strip('%0D%0A') + "%0D%0A")
+                                i = 0
+                            else:
+                                url_parts.append(char.strip('%0D%0A') + "")
+                            i += 1
+                        url = ''.join(url_parts)
+                        clean_url = url.replace('?', '%3F')
+                        print(f"{url_parts}")
+                        request = requests.get("https://cataas.com/cat/says/" + clean_url + "?json=true")
+                        data = request.json()
+                        url = data["url"]
+                        await ctx.send("https://cataas.com" + url)
+                        return
+
+                #cleanStr = refStr.replace(' ','%20')
+                clean_str = clean_str.replace('?', '%3F')
+                url = "https://cataas.com/cat/says/"+clean_str+"?json=true"
 
 
-            request = requests.get(url)
-            data = request.json()
-            url = data["url"]
-            await ctx.send("https://cataas.com"+url)
+                request = requests.get(url)
+                data = request.json()
+                url = data["url"]
+                await ctx.send("https://cataas.com"+url)
+        except:
+            await ctx.send("The Cat as a service feature is currently down on their end. Sorry!")
 #https://cataas.com/cat/says/Why%20is%20this%20happening%20to%20me
 
     @commands.cooldown(4, 10, commands.BucketType.user)
@@ -423,6 +367,16 @@ class funActions(commands.Cog):
         data = request.json()
         fact = data["data"][0]
         await ctx.send(f"Cat fact: {fact}")
+
+    @app_commands.command()
+    @app_commands.describe(fruits='fruits to choose from')
+    @app_commands.choices(fruits=[
+        Choice(name='apple', value=1),
+        Choice(name='banana', value=2),
+        Choice(name='cherry', value=3),
+    ])
+    async def fruit(self, interaction: discord.Interaction, fruits: Choice[int]):
+        await interaction.response.send_message(f'Your favourite fruit is {fruits.name}.')
 
 
 async def setup(bot: commands.Bot):

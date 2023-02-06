@@ -171,7 +171,7 @@ class SpacerButton(Button):
 class ExploreView(View):
     def __init__(self, health, position, bot, ctx, steps, user_data, collection):
         super().__init__(timeout=10)
-        self.health = health
+        self.health = health + 100
         self.position = position
         self.goldEarned = 0
         self.bot = bot
